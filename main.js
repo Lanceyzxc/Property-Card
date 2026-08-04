@@ -23,167 +23,6 @@ const defaultLayout = [
 let totalCardCount = 0;
 let uniqueCardId = 0;
 let allCards = [];
-let deletedCardHistory = [];
-let sessionSaveTimer = null;
-let isHydratingSession = false;
-
-const SESSION_STORAGE_KEY = 'property-card-session-v1';
-
-function getCardData(cardElement) {
-  const deptSelect = cardElement.querySelector('.dept-select');
-  const inputs = cardElement.querySelectorAll('.underline-input');
-
-  return {
-    color: deptSelect ? deptSelect.value : departments[0].color,
-    fields: Array.from(inputs).map(input => input.value || '')
-  };
-}
-
-function applyCardData(cardElement, cardData) {
-  if (!cardData) return;
-
-  const deptSelect = cardElement.querySelector('.dept-select');
-  const banner = cardElement.querySelector('.color-banner');
-  const inputs = cardElement.querySelectorAll('.underline-input');
-
-  if (deptSelect && cardData.color) {
-    deptSelect.value = cardData.color;
-  }
-
-  if (banner && cardData.color) {
-    banner.style.backgroundColor = cardData.color;
-  }
-
-  Array.from(inputs).forEach((input, index) => {
-    const value = (cardData.fields && cardData.fields[index]) ? cardData.fields[index] : '';
-    input.value = value;
-    if (input.tagName === 'TEXTAREA') {
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-  });
-}
-
-function scheduleSessionSave() {
-  if (isHydratingSession) return;
-  window.clearTimeout(sessionSaveTimer);
-  sessionSaveTimer = window.setTimeout(saveSession, 150);
-}
-
-function saveSession() {
-  if (isHydratingSession) return;
-
-  const filterSelect = document.getElementById('filter-dept');
-  const searchInput = document.getElementById('search-query');
-
-  const sessionData = {
-    nextCardId: uniqueCardId,
-    cards: allCards.map(card => getCardData(card)),
-    ui: {
-      filterValue: filterSelect ? filterSelect.value : 'ALL',
-      searchValue: searchInput ? searchInput.value : ''
-    }
-  };
-
-  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
-}
-
-function restoreSession() {
-  const saved = localStorage.getItem(SESSION_STORAGE_KEY);
-  if (!saved) return false;
-
-  try {
-    const sessionData = JSON.parse(saved);
-    if (!sessionData || !Array.isArray(sessionData.cards)) return false;
-
-    isHydratingSession = true;
-    clearWorkspace();
-    uniqueCardId = Number.isInteger(sessionData.nextCardId) ? sessionData.nextCardId : 0;
-
-    sessionData.cards.forEach(cardData => {
-      createSingleCard(cardData.color || departments[0].color, cardData, false);
-    });
-
-    const filterSelect = document.getElementById('filter-dept');
-    const searchInput = document.getElementById('search-query');
-    if (filterSelect && sessionData.ui && sessionData.ui.filterValue) {
-      filterSelect.value = sessionData.ui.filterValue;
-    }
-    if (searchInput && sessionData.ui && typeof sessionData.ui.searchValue === 'string') {
-      searchInput.value = sessionData.ui.searchValue;
-    }
-
-    buildFilterOptions();
-    applyFilter();
-    return true;
-  } catch (err) {
-    console.error('Failed to restore session:', err);
-    return false;
-  } finally {
-    isHydratingSession = false;
-  }
-}
-
-function clearWorkspace() {
-  const container = document.getElementById('pages-container');
-  if (container) {
-    container.innerHTML = '';
-  }
-  allCards = [];
-  totalCardCount = 0;
-  deletedCardHistory = [];
-}
-
-function exportToPDF() {
-  printCards();
-}
-
-function exportToExcel() {
-  const rows = allCards.map(card => {
-    const data = getCardData(card);
-    const deptSelect = card.querySelector('.dept-select');
-    const deptName = deptSelect && deptSelect.selectedIndex >= 0
-      ? deptSelect.options[deptSelect.selectedIndex].text.trim()
-      : '';
-
-    return {
-      Department: deptName,
-      'ICS/PAR No.': data.fields[0] || '',
-      'Property No.': data.fields[1] || '',
-      'Item Description': data.fields[2] || '',
-      'Requested by': data.fields[3] || '',
-      'End-User/Location': data.fields[4] || '',
-      Supplier: data.fields[5] || '',
-      Fund: data.fields[6] || '',
-      'Date Aquired': data.fields[7] || '',
-      'Acquisition Cost': data.fields[8] || '',
-      'P.O/J.O/Contract Ref': data.fields[9] || ''
-    };
-  });
-
-  if (rows.length === 0) {
-    alert('No cards available to export!');
-    return;
-  }
-
-  const worksheet = XLSX.utils.json_to_sheet(rows);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Property Cards');
-
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  XLSX.writeFile(workbook, `property-cards-${timestamp}.xlsx`);
-}
-
-function undoLastDelete() {
-  const lastDeleted = deletedCardHistory.pop();
-  if (!lastDeleted) {
-    alert('No deleted card to undo.');
-    return;
-  }
-
-  createSingleCard(lastDeleted.data.color || departments[0].color, lastDeleted.data, false);
-  applyFilter();
-  saveSession();
-}
 
 function generateOptions(selectedColor) {
   let optionsHtml = '';
@@ -198,11 +37,10 @@ function addNewCards() {
   const qty = parseInt(document.getElementById('add-qty').value) || 1;
   const color = document.getElementById('add-dept-select').value;
   for(let i = 0; i < qty; i++) {
-    createSingleCard(color, null, false);
+    createSingleCard(color);
   }
   applyFilter();
   closeAddPanel();
-  saveSession();
 }
 
 function toggleAddPanel() {
@@ -220,11 +58,11 @@ function closeAddPanel() {
 function addCards(amount) {
   for (let i = 0; i < amount; i++) {
     let defaultColor = (uniqueCardId < 10) ? defaultLayout[uniqueCardId] : departments[0].color;
-    createSingleCard(defaultColor, null, false);
+    createSingleCard(defaultColor);
   }
 }
 
-function createSingleCard(initColor, cardData = null, shouldSave = true) {
+function createSingleCard(initColor) {
   const container = document.getElementById('pages-container');
   let pages = container.querySelectorAll('.page-wrapper');
   let lastPageGrid = null;
@@ -243,21 +81,19 @@ function createSingleCard(initColor, cardData = null, shouldSave = true) {
 
   const currentIndex = uniqueCardId++;
   totalCardCount++;
-  const cardColor = (cardData && cardData.color) ? cardData.color : initColor;
   
   // Using a fallback mechanism for the logo image to prevent broken links in preview
   const cardHtml = `
-    <div class="card-ui-wrapper" id="card-wrapper-${currentIndex}" data-card-id="${currentIndex}">
+    <div class="card-ui-wrapper" id="card-wrapper-${currentIndex}">
       <div class="card-header-control">
         <select class="neu-select dept-select" style="flex-grow: 1;" onchange="updateCardColor(this, ${currentIndex})">
-          ${generateOptions(cardColor)}
+          ${generateOptions(initColor)}
         </select>
         <button class="neu-btn danger" style="padding: 8px; width: auto; margin-left: 10px; flex-shrink: 0;" onclick="deleteCard(this)" title="Delete Card">🗑️</button>
-        <button class="neu-btn" style="padding: 8px; width: auto; margin-left: 8px; flex-shrink: 0;" onclick="duplicateCard(this)" title="Duplicate Card">⧉</button>
       </div>
       <div class="label-container">
         <div class="top-white-space"></div>
-        <div class="color-banner" id="banner-${currentIndex}" style="background-color: ${cardColor}">
+        <div class="color-banner" id="banner-${currentIndex}" style="background-color: ${initColor}">
           <h1>CNSC PROPERTY</h1>
         </div>
         <div class="logo-shield"><img src="logo.png" onerror="this.onerror=null; this.src='https://placehold.co/85x95/ffd700/000000?text=Logo'" alt="CNSC Logo"></div>
@@ -280,13 +116,6 @@ function createSingleCard(initColor, cardData = null, shouldSave = true) {
   lastPageGrid.insertAdjacentHTML('beforeend', cardHtml);
   const newCard = lastPageGrid.lastElementChild;
   allCards.push(newCard);
-  newCard.addEventListener('input', scheduleSessionSave);
-  newCard.addEventListener('change', scheduleSessionSave);
-
-  if (cardData) {
-    applyCardData(newCard, cardData);
-  }
-
   // Attach auto-resize behavior to any textarea inside the new card
   const textareas = newCard.querySelectorAll('textarea.auto-resize');
   textareas.forEach((ta) => {
@@ -349,32 +178,14 @@ function createSingleCard(initColor, cardData = null, shouldSave = true) {
     // initial adjust
     adjust(ta);
   });
-
-  if (shouldSave) {
-    scheduleSessionSave();
-  }
 }
 
 function deleteCard(btnElement) {
   const cardWrapper = btnElement.closest('.card-ui-wrapper');
-  deletedCardHistory.push({ data: getCardData(cardWrapper) });
-  if (deletedCardHistory.length > 20) {
-    deletedCardHistory.shift();
-  }
   allCards = allCards.filter(card => card !== cardWrapper);
   cardWrapper.remove();
   totalCardCount--;
   reorganizePages();
-  applyFilter();
-  saveSession();
-}
-
-function duplicateCard(btnElement) {
-  const cardWrapper = btnElement.closest('.card-ui-wrapper');
-  const cardData = getCardData(cardWrapper);
-  createSingleCard(cardData.color || departments[0].color, cardData, false);
-  applyFilter();
-  saveSession();
 }
 
 // Reflow cards into pages. If `cardsList` is provided, that list/order is used.
@@ -403,52 +214,24 @@ function reorganizePages(cardsList) {
 function updateCardColor(selectElement, index) {
   const banner = document.getElementById(`banner-${index}`);
   banner.style.backgroundColor = selectElement.value;
-  scheduleSessionSave();
 }
 
 // Initialize layout on load with exactly 10 cards (1 page)
 window.onload = function() {
+  addCards(10);
   buildFilterOptions();
   // Wire up filter UI
   const filterSelect = document.getElementById('filter-dept');
   const searchInput = document.getElementById('search-query');
   const addPanel = document.getElementById('add-panel');
   const addFab = document.getElementById('add-fab');
-  const saveButton = document.getElementById('save-session');
-  const restoreButton = document.getElementById('restore-session');
-  const exportPdfButton = document.getElementById('export-pdf');
-  const exportExcelButton = document.getElementById('export-excel');
-  const undoDeleteButton = document.getElementById('undo-delete');
-
-  if (!restoreSession()) {
-    addCards(10);
-    applyFilter();
-    saveSession();
-  }
-
   document.getElementById('reset-filter').addEventListener('click', () => {
     filterSelect.value = 'ALL';
     searchInput.value = '';
     applyFilter();
-    saveSession();
   });
-  filterSelect.addEventListener('change', () => {
-    applyFilter();
-    saveSession();
-  });
-  searchInput.addEventListener('input', () => {
-    applyFilter();
-    saveSession();
-  });
-  saveButton.addEventListener('click', saveSession);
-  restoreButton.addEventListener('click', () => {
-    if (restoreSession()) {
-      saveSession();
-    }
-  });
-  exportPdfButton.addEventListener('click', exportToPDF);
-  exportExcelButton.addEventListener('click', exportToExcel);
-  undoDeleteButton.addEventListener('click', undoLastDelete);
+  filterSelect.addEventListener('change', applyFilter);
+  searchInput.addEventListener('input', applyFilter);
 
   // Close add panel when user clicks outside of it
   document.addEventListener('click', (e) => {
@@ -483,7 +266,6 @@ function processExcel() {
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      isHydratingSession = true;
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, {type: 'array'});
       const firstSheetName = workbook.SheetNames[0];
@@ -496,9 +278,10 @@ function processExcel() {
       
       if(jsonData.length > 0) {
         // BAGO: Burahin muna ang mga naka-display na cards at i-reset ang bilang bago ilagay ang Excel data
-        clearWorkspace();
-        deletedCardHistory = [];
+        document.getElementById('pages-container').innerHTML = '';
+        totalCardCount = 0;
         uniqueCardId = 0;
+        allCards = [];
 
         const generatedCount = populateFromExcel(jsonData);
         if (generatedCount > 0) {
@@ -517,8 +300,6 @@ function processExcel() {
       statusText.style.color = "#9a0603";
       statusText.innerText = "Error reading Excel file.";
       console.error(err);
-    } finally {
-      isHydratingSession = false;
     }
     setTimeout(() => statusText.innerText = "", 6000);
   };
@@ -576,7 +357,7 @@ function populateFromExcel(dataRows) {
     }
 
     // 2. Create a new card
-    createSingleCard(matchedColor, null, false);
+    createSingleCard(matchedColor);
     generatedCount++;
     
     // 3. Target the newly created card
@@ -650,7 +431,6 @@ function populateFromExcel(dataRows) {
   // Refresh department filter options after import
   buildFilterOptions();
   applyFilter();
-  saveSession();
   return generatedCount;
 }
 
