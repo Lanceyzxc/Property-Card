@@ -1,0 +1,405 @@
+:root {
+  --bg-color: #e0e0e0;
+  --neumorphic-light: #ffffff;
+  --neumorphic-dark: #bebebe;
+  --text-main: #333333;
+}
+
+body {
+  background-color: var(--bg-color);
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* SIDEBAR / CONTROL PANEL */
+.sidebar {
+  width: 320px;
+  background-color: var(--bg-color);
+  padding: 30px 20px;
+  box-shadow: 6px 0 15px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  z-index: 50;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  text-align: center;
+  color: var(--text-main);
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: 1px;
+  color: #444;
+  text-shadow:
+    2px 2px 4px rgba(255,255,255,0.85),
+    -2px -2px 4px rgba(0,0,0,0.12);
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,0.6));
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--bg-color);
+  box-shadow: 8px 8px 16px var(--neumorphic-dark), -8px -8px 16px var(--neumorphic-light);
+}
+
+.control-group label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #555;
+}
+
+.neu-select, .neu-input {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--bg-color);
+  box-shadow: inset 5px 5px 10px var(--neumorphic-dark), inset -5px -5px 10px var(--neumorphic-light);
+  color: var(--text-main);
+  font-weight: bold;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  box-sizing: border-box;
+}
+
+.neu-input {
+  cursor: text;
+  text-align: center;
+}
+
+.neu-btn {
+  width: 100%;
+  padding: 12px 15px;
+  border: none;
+  border-radius: 12px;
+  background: var(--bg-color);
+  box-shadow: 6px 6px 12px var(--neumorphic-dark), -6px -6px 12px var(--neumorphic-light);
+  color: var(--text-main);
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+}
+
+.neu-btn:active {
+  box-shadow: inset 4px 4px 8px var(--neumorphic-dark), inset -4px -4px 8px var(--neumorphic-light);
+}
+
+.neu-btn.primary {
+  color: #004aad;
+  font-size: 16px;
+  padding: 15px;
+}
+
+.neu-btn.danger {
+  color: #9a0603;
+}
+
+.btn-row {
+  display: flex;
+  gap: 15px;
+}
+
+.main-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 40px;
+  display: flex;
+  flex-direction: column; /* Stack pages vertically */
+  align-items: center;
+  gap: 40px; /* Space between different page layouts on screen */
+}
+
+.page-wrapper {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 1400px;
+  padding: 30px;
+  box-shadow: 0px 10px 30px rgba(0,0,0,0.15);
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.card-ui-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-header-control {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header-control select {
+  padding: 8px;
+  font-size: 12px;
+}
+
+.label-container {
+  width: 100%;
+  background-color: #faf9f5;
+  border: 1.5px solid #000;
+  box-sizing: border-box;
+  position: relative;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+}
+
+.top-white-space {
+  height: 20px;
+  background-color: transparent;
+}
+
+.color-banner {
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-top: 1.5px solid #000;
+  border-bottom: 2px solid #333;
+  background-color: #ffffff; 
+}
+
+.color-banner h1 {
+  margin: 0;
+  font-family: "Arial Black", Arial, sans-serif;
+  font-size: 32px;
+  letter-spacing: 2px;
+  color: #4a4a4a;
+  -webkit-text-stroke: 1.5px #000;
+  text-shadow: 
+    1px 1px 0 #fff, 
+   -1px -1px 0 #fff, 
+    1px -1px 0 #fff, 
+   -1px 1px 0 #fff,
+    0px 2px 4px rgba(0,0,0,0.6);
+  transform: scaleX(1.15); 
+}
+
+.logo-shield {
+  position: absolute;
+  top:2px;
+  right: 40px;
+  width: 85px;
+  height: 95px;
+  z-index: 10;
+}
+
+.logo-shield img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.form-section {
+  padding: 14px 24px 18px 24px;
+}
+
+.form-row {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 8px;
+}
+
+.form-row label {
+  font-size: 16px;
+  color: #3b3b3b;
+  white-space: nowrap;
+}
+
+.form-row .underline-input {
+  flex-grow: 1;
+  border: none;
+  border-bottom: 1.5px solid #333;
+  background-color: transparent;
+  margin-left: 5px;
+  font-size: 15px;
+  color: #000;
+  outline: none;
+  padding: 0 4px 1px 4px;
+  font-family: Arial, Helvetica, sans-serif;
+  transition: box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.form-row .underline-input:focus {
+  box-shadow: inset 3px 3px 8px rgba(0,0,0,0.06), inset -3px -3px 8px rgba(255,255,255,0.9);
+  border-bottom-color: #004aad;
+}
+
+/* Auto-resize textarea for Item Description */
+.auto-resize {
+  resize: none;
+  overflow: hidden;
+  min-height: 1.1em;
+  max-height: calc(1.1em * 2 + 4px);
+  line-height: 1.1em;
+  font-size: 15px;
+  padding: 0 4px 1px 4px;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+/* NEUMORPHIC PRINT BUTTON & ANIMATIONS */
+.neu-btn-print {
+  color: #333333; /* Black/Dark Gray text na ngayon */
+  font-weight: 900;
+  font-size: 16px;
+  padding: 15px;
+  background: var(--bg-color);
+  box-shadow: 6px 6px 12px var(--neumorphic-dark), 
+             -6px -6px 12px var(--neumorphic-light);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  /* Subtle breathing shadow */
+  animation: shadowBreathe 3s infinite ease-in-out;
+}
+
+/* Hover state: Umaangat at mas umiitim ang text */
+.neu-btn-print:hover {
+  box-shadow: 8px 8px 16px var(--neumorphic-dark), 
+             -8px -8px 16px var(--neumorphic-light);
+  transform: translateY(-3px);
+  color: #000000;
+}
+
+/* Active state: Lulubog nang malalim kapag kinlick */
+.neu-btn-print:active {
+  box-shadow: inset 5px 5px 10px var(--neumorphic-dark), 
+              inset -5px -5px 10px var(--neumorphic-light);
+  transform: translateY(2px);
+  animation: none;
+}
+
+/* Icon Alignment */
+.neu-btn-print .print-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- PRINTER SVG ANIMATIONS --- */
+.printer-svg {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.neu-btn-print:hover .printer-svg {
+  transform: scale(1.15); /* Lumalaki nang kaunti yung buong printer */
+}
+
+/* Papel sa taas (pumapasok) */
+.paper-top {
+  transition: transform 0.4s ease-in-out;
+}
+.neu-btn-print:hover .paper-top {
+  transform: translateY(3px); /* Hinihigop pababa yung papel */
+}
+
+/* Papel sa baba (lumalabas) */
+.paper-bottom {
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.neu-btn-print:hover .paper-bottom {
+  transform: translateY(4px); /* Iniluluwa yung papel */
+}
+
+/* Breathing Shadow Effect */
+@keyframes shadowBreathe {
+  0% {
+    box-shadow: 6px 6px 12px var(--neumorphic-dark), -6px -6px 12px var(--neumorphic-light);
+  }
+  50% {
+    box-shadow: 3px 3px 8px var(--neumorphic-dark), -3px -3px 8px var(--neumorphic-light);
+  }
+  100% {
+    box-shadow: 6px 6px 12px var(--neumorphic-dark), -6px -6px 12px var(--neumorphic-light);
+  }
+}
+
+/* Floating add-card action */
+.add-card-floating {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 120;
+}
+
+.add-fab {
+  width: 62px;
+  height: 62px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-color);
+  box-shadow: 8px 8px 16px var(--neumorphic-dark), -8px -8px 16px var(--neumorphic-light);
+  color: #004aad;
+  font-size: 34px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.add-fab:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+
+.add-fab:active {
+  box-shadow: inset 4px 4px 8px var(--neumorphic-dark), inset -4px -4px 8px var(--neumorphic-light);
+  transform: translateY(1px);
+}
+
+.add-panel {
+  width: 280px;
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--bg-color);
+  box-shadow: 10px 10px 20px var(--neumorphic-dark), -10px -10px 20px var(--neumorphic-light);
+  display: none;
+}
+
+.add-panel.open {
+  display: block;
+}
+
+.add-panel label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #555;
+}
+
+@media (max-width: 900px) {
+  .add-card-floating {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .add-panel {
+    width: min(300px, 84vw);
+  }
+}

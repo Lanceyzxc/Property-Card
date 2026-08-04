@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UCN Supply & Property Management Office</title>
+<!-- Add SheetJS Library to parse Excel Files in the browser -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h2>SUPPLY & PROPERTY MANAGEMENT OFFICE</h2>
+  </div>
+  
+
+  <!-- EXCEL UPLOAD SECTION -->
+  <div class="control-group">
+    <label>Upload Excel File</label>
+    <input type="file" id="excel-file" class="neu-input" accept=".xlsx, .xls, .csv" style="padding: 10px; font-size: 12px; background: #fff;">
+    <button class="neu-btn primary" style="font-size: 14px; padding: 10px;" onclick="processExcel()">📄 Load Data</button>
+    <div id="upload-status" style="font-size: 12px; color: #9a0603; text-align: center; font-weight: bold;"></div>
+    <p style="font-size: 11px; color: #666; margin: 0; text-align: center;">
+      <b>Headers format in Excel:</b><br>
+      Department, ICS/PAR No., Property No., Item Description, Requested by, End-User/Location, Date Acquired, Acquisition Cost, P.O/J.O/Contract Ref
+    </p>
+  </div>
+
+  <div class="control-group">
+    <label>Search</label>
+    <input type="text" id="search-query" class="neu-input" style="text-align: left;" placeholder="Search property no, item, user, supplier...">
+  </div>
+
+  <div class="control-group">
+    <label>Filter</label>
+    <select id="filter-dept" class="neu-select" style="margin-bottom: 8px;">
+      <option value="ALL">All Departments</option>
+      <!-- Department options injected by JS -->
+    </select>
+    <div class="btn-row">
+      <button class="neu-btn" style="flex:1;" id="reset-filter">Reset</button>
+    </div>
+    <hr style="border-top: 1px solid #ccc; width: 100%; margin: 5px 0; border-color: var(--neumorphic-dark);">
+    <hr style="border-top: 1px solid #ccc; width: 100%; margin: 5px 0; border-color: var(--neumorphic-dark);">
+<button class="neu-btn neu-btn-print" onclick="printCards()">
+  <span class="print-icon">
+    <!-- SVG Printer Icon with animated parts -->
+    <svg class="printer-svg" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Top Paper -->
+      <polyline class="paper-top" points="6 9 6 2 18 2 18 9"></polyline>
+      <!-- Printer Body -->
+      <path class="printer-body" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+      <!-- Bottom Paper (Printed) -->
+      <rect class="paper-bottom" x="6" y="14" width="12" height="8"></rect>
+    </svg>
+  </span> 
+  Print Cards
+</button>
+  </div>
+
+  <div class="control-group">
+    <label>Data Tools</label>
+    <div class="btn-row">
+      <button class="neu-btn" style="flex:1;" id="save-session">Save Session</button>
+      <button class="neu-btn" style="flex:1;" id="restore-session">Restore Session</button>
+    </div>
+    <div class="btn-row">
+      <button class="neu-btn" style="flex:1;" id="export-pdf">Export PDF</button>
+      <button class="neu-btn" style="flex:1;" id="export-excel">Export Excel</button>
+    </div>
+    <button class="neu-btn danger" id="undo-delete">Undo Delete</button>
+  </div>
+
+</aside>
+
+<main class="main-content" id="pages-container">
+  <!-- Page wrappers and cards will be dynamically injected here to preserve input state -->
+</main>
+
+<div class="add-card-floating">
+  <button class="add-fab" id="add-fab" onclick="toggleAddPanel()" aria-label="Open Add Card panel" title="Add New Cards">+</button>
+  <div class="add-panel" id="add-panel">
+    <label>Add New Cards</label>
+    <select id="add-dept-select" class="neu-select" style="margin-bottom: 8px;">
+      <option value="#9a0603">GASS (Dark Red)</option>
+      <option value="#8c52ff">COTT (Purple)</option>
+      <option value="#38b6ff">CFAST (Light Blue)</option>
+      <option value="#737373">CCMS (Gray)</option>
+      <option value="#004aad">COED (Dark Blue)</option>
+      <option value="#ff751f">IABD (Orange)</option>
+      <option value="#faf901">CBPA (Yellow)</option>
+      <option value="#499632">CANR (Green)</option>
+      <option value="#ffde59">COENG (Light Yellow)</option>
+      <option value="#ff3131">CAS (Bright Red)</option>
+    </select>
+    <div class="btn-row" style="align-items: center;">
+      <input type="number" id="add-qty" class="neu-input" value="1" min="1" max="50" style="width: 80px;">
+      <button class="neu-btn" style="flex: 1;" onclick="addNewCards()">+ Add Cards</button>
+    </div>
+  </div>
+</div>
+
+<script src="main.js"></script>
+<script src="print.js"></script>
+</body>
+</html>
