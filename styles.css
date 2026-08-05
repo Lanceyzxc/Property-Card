@@ -33,6 +33,64 @@ body {
   color: var(--text-main);
 }
 
+.dashboard-summary {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 22px;
+  background: var(--bg-color);
+  box-shadow: inset 4px 4px 10px rgba(0,0,0,0.08), inset -4px -4px 10px rgba(255,255,255,0.9);
+  color: #222;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.summary-box {
+  flex: 1;
+  min-width: 0;
+  background: linear-gradient(145deg, #f2f2f2, #e8e8e8);
+  border-radius: 18px;
+  padding: 12px 14px;
+  box-shadow: 6px 6px 12px rgba(0,0,0,0.06), -6px -6px 12px rgba(255,255,255,0.95);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.summary-label {
+  font-size: 11px;
+  letter-spacing: 0.7px;
+  color: #6c6c6c;
+  text-transform: uppercase;
+}
+
+.summary-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1c1c1c;
+  line-height: 1.1;
+  text-align: right;
+}
+
+@media (max-width: 720px) {
+  .dashboard-summary {
+    flex-direction: column;
+  }
+}
+
+.sidebar {
+  width: 320px;
+  background-color: var(--bg-color);
+  padding: 30px 20px;
+  box-shadow: 6px 0 15px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  z-index: 50;
+  overflow-y: auto;
+}
+
 .sidebar-header h2 {
   margin: 0;
   font-size: 24px;

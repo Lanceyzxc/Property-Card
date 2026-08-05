@@ -148,6 +148,36 @@ function printCards() {
   <body>
   `;
 
+    // Helper: generate a QR data URL for a card by creating a temporary QR element
+    function generateQRDataUrlFromCard(card) {
+      try {
+        // Prefer using existing payload collector if available
+        var payload = (typeof collectCardPayload === 'function') ? collectCardPayload(card) : null;
+        var text = payload ? JSON.stringify(payload) : '';
+        // create temp container off-screen
+        const tmp = document.createElement('div');
+        tmp.style.position = 'absolute'; tmp.style.left = '-9999px'; tmp.style.top = '-9999px';
+        document.body.appendChild(tmp);
+        try {
+          new QRCode(tmp, { text: text, width: 88, height: 88 });
+        } catch (e) {
+          // QR library may not be available
+        }
+        let dataUrl = '';
+        const img = tmp.querySelector('img');
+        const canvas = tmp.querySelector('canvas');
+        if (img && img.src) dataUrl = img.src;
+        else if (canvas && canvas.toDataURL) {
+          try { dataUrl = canvas.toDataURL(); } catch (e) { dataUrl = ''; }
+        }
+        document.body.removeChild(tmp);
+        return dataUrl || '';
+      } catch (err) {
+        console.warn('generateQRDataUrlFromCard error', err);
+        return '';
+      }
+    }
+
   // 4. Loop through cards and inject them in chunks of 10 per page
   let cardIndex = 0;
   
@@ -173,6 +203,36 @@ function printCards() {
       const acqCost = inputs[8].value || '';
       const refCode = inputs[9].value || '';
 
+      // Try to extract QR image/canvas/svg from the live card so it can be embedded in print output.
+      // If that fails, generate a fresh data-URL from the card payload as a fallback.
+      let qrDataUrl = '';
+      try {
+        const qrEl = card.querySelector('.qr-box');
+        if (qrEl) {
+          const imgChild = qrEl.querySelector('img');
+          const canvasChild = qrEl.querySelector('canvas');
+          const svgChild = qrEl.querySelector('svg');
+          if (imgChild && imgChild.src) {
+            qrDataUrl = imgChild.src;
+          } else if (canvasChild && canvasChild.toDataURL) {
+            try { qrDataUrl = canvasChild.toDataURL(); } catch (e) { qrDataUrl = ''; }
+          } else if (svgChild) {
+            try {
+              const xml = new XMLSerializer().serializeToString(svgChild);
+              qrDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+            } catch (e) { qrDataUrl = ''; }
+          }
+        }
+      } catch (e) {
+        console.warn('Failed extracting QR from card for print:', e);
+        qrDataUrl = '';
+      }
+
+      if (!qrDataUrl) {
+        // attempt print-time regeneration
+        qrDataUrl = generateQRDataUrlFromCard(card) || '';
+      }
+
       html += `
         <div class="label-container">
           <div class="top-white-space"></div>
@@ -195,6 +255,7 @@ function printCards() {
             <div class="form-row"><label>Acquisition Cost:</label><div class="value">${acqCost}</div></div>
             <div class="form-row"><label>P.O/J.O/Contract Ref:</label><div class="value">${refCode}</div></div>
           </div>
+          ${ qrDataUrl ? `<img class="qr-print" src="${qrDataUrl}" style="position:absolute; right:8px; bottom:8px; width:76px; height:76px;" alt="QR">` : '' }
         </div>
       `;
       cardIndex++;

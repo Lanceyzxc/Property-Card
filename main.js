@@ -40,6 +40,7 @@ function addNewCards() {
     createSingleCard(color);
   }
   applyFilter();
+  refreshDashboardSummary();
   closeAddPanel();
 }
 
@@ -186,6 +187,7 @@ function deleteCard(btnElement) {
   cardWrapper.remove();
   totalCardCount--;
   reorganizePages();
+  refreshDashboardSummary();
 }
 
 // Reflow cards into pages. If `cardsList` is provided, that list/order is used.
@@ -230,8 +232,8 @@ window.onload = function() {
     searchInput.value = '';
     applyFilter();
   });
-  filterSelect.addEventListener('change', applyFilter);
-  searchInput.addEventListener('input', applyFilter);
+  filterSelect.addEventListener('change', () => { applyFilter(); refreshDashboardSummary(); });
+  searchInput.addEventListener('input', () => { applyFilter(); refreshDashboardSummary(); });
 
   // Close add panel when user clicks outside of it
   document.addEventListener('click', (e) => {
@@ -245,7 +247,22 @@ window.onload = function() {
 
   // Keyboard navigation for inputs (Enter / Arrow keys)
   setupKeyboardNavigation();
+  refreshDashboardSummary();
 };
+
+function refreshDashboardSummary() {
+  const totalCards = allCards.length;
+  const visibleCards = document.querySelectorAll('.card-ui-wrapper').length;
+  const uniqueDepartments = new Set();
+  allCards.forEach(card => {
+    const select = card.querySelector('.dept-select');
+    if (select) uniqueDepartments.add(select.options[select.selectedIndex]?.text.trim() || '');
+  });
+
+  document.getElementById('summary-total-cards').innerText = totalCards;
+  document.getElementById('summary-visible-cards').innerText = visibleCards;
+  document.getElementById('summary-departments').innerText = uniqueDepartments.size;
+}
 
 // --- EXCEL PROCESSING LOGIC ---
 function processExcel() {
@@ -284,6 +301,7 @@ function processExcel() {
         allCards = [];
 
         const generatedCount = populateFromExcel(jsonData);
+        refreshDashboardSummary();
         if (generatedCount > 0) {
           statusText.style.color = "#499632";
           statusText.innerText = `Success! Generated ${generatedCount} cards.`;
