@@ -168,6 +168,58 @@ body {
   padding: 15px;
 }
 
+.neu-btn.load-data-btn {
+  color: #000000;
+  font-weight: 900;
+  font-size: 16px;
+  background: var(--bg-color);
+  box-shadow: 6px 6px 12px var(--neumorphic-dark),
+              -6px -6px 12px var(--neumorphic-light);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  animation: shadowBreathe 3s infinite ease-in-out;
+}
+
+.neu-btn.load-data-btn:hover {
+  box-shadow: 8px 8px 16px var(--neumorphic-dark),
+              -8px -8px 16px var(--neumorphic-light);
+  transform: translateY(-3px);
+  color: #000000;
+}
+
+.neu-btn.load-data-btn:active {
+  box-shadow: inset 5px 5px 10px var(--neumorphic-dark),
+              inset -5px -5px 10px var(--neumorphic-light);
+  transform: translateY(2px);
+  animation: none;
+}
+
+.neu-btn.load-data-btn .load-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.load-svg {
+  width: 20px;
+  height: 20px;
+  color: #000000;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.load-arrow-group {
+  transition: transform 0.35s ease-in-out;
+  transform-origin: center;
+}
+
+.neu-btn.load-data-btn:hover .load-svg {
+  transform: scale(1.08);
+}
+
+.neu-btn.load-data-btn:hover .load-arrow-group {
+  transform: translateY(3px);
+}
+
 .neu-btn.danger {
   color: #9a0603;
 }
