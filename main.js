@@ -95,20 +95,20 @@ function createSingleCard(initColor) {
       <div class="label-container">
         <div class="top-white-space"></div>
         <div class="color-banner" id="banner-${currentIndex}" style="background-color: ${initColor}">
-          <h1>CNSC PROPERTY</h1>
+          <h1>UCN PROPERTY TAG</h1>
         </div>
-        <div class="logo-shield"><img src="logo.png" onerror="this.onerror=null; this.src='https://placehold.co/85x95/ffd700/000000?text=Logo'" alt="CNSC Logo"></div>
+        <div class="logo-shield"></div>
         <div class="form-section">
           <div class="form-row"><label>ICS/PAR No.:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>Property No.:</label><input type="text" class="underline-input"></div>
-          <div class="form-row"><label>Item Description:</label><textarea class="underline-input auto-resize" rows="1"></textarea></div>
-          <div class="form-row"><label>Requested by:</label><input type="text" class="underline-input"></div>
-          <div class="form-row"><label>End-User/Location:</label><input type="text" class="underline-input"></div>
-          <div class="form-row"><label>Supplier:</label><input type="text" class="underline-input"></div>
-          <div class="form-row"><label>Fund:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>Date Aquired:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>Acquisition Cost:</label><input type="text" class="underline-input"></div>
+          <div class="form-row"><label>Fund:</label><input type="text" class="underline-input"></div>
+          <div class="form-row"><label>End-User/Location:</label><input type="text" class="underline-input"></div>
+          <div class="form-row"><label>Requested by:</label><input type="text" class="underline-input"></div>
+          <div class="form-row"><label>Supplier:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>P.O/J.O/Contract Ref:</label><textarea class="underline-input auto-resize" rows="1"></textarea></div>
+          <div class="form-row"><label>Item Description:</label><textarea class="underline-input auto-resize" rows="1"></textarea></div>
         </div>
       </div>
     </div>

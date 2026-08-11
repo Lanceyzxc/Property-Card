@@ -33,7 +33,7 @@ function printCards() {
   <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>Print CNSC Property Cards</title>
+    <title>Print UCN Property Cards</title>
     <style>
       @page { 
         size: A4 portrait; 
@@ -79,6 +79,7 @@ function printCards() {
         border-top: 1.5px solid #000;
         border-bottom: 2px solid #333;
         position: relative;
+        z-index: 3;
       }
       .color-banner h1 {
         margin: 0;
@@ -95,19 +96,28 @@ function printCards() {
           0px 1px 2px rgba(0,0,0,0.6);
         transform: scaleX(1.15); 
       }
-      .logo-shield {
-        position: absolute;
-        /* Further reduced logo size per request */
-        top: -6px;
-        right: 14px;
-        width: 36px;
-        height: 36px;
-        z-index: 10;
+      .logo-shield { display: none; }
+
+      /* Watermark inside the printable form area, excludes the header/banner */
+      .form-section {
+        position: relative;
+        z-index: 2;
       }
-      .logo-shield img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
+      .form-section::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 280px;
+        height: 280px;
+        background-image: url("logo.png");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+        opacity: 0.10;
+        z-index: 0;
+        pointer-events: none;
       }
       .form-section {
         padding: 2px 12px 4px 12px;
@@ -191,17 +201,17 @@ function printCards() {
       const bannerColor = card.querySelector('.color-banner').style.backgroundColor;
       const inputs = card.querySelectorAll('.underline-input');
       
-      // Extract values from the inputs/textareas
+      // Extract values from the inputs/textareas in the new requested order
       const icsParNo = inputs[0].value || '';
       const propertyNo = inputs[1].value || '';
-      const description = inputs[2].value || '';
-      const requestedBy = inputs[3].value || '';
-      const endUser = inputs[4].value || '';
-      const supplier = inputs[5].value || '';
-      const fund = inputs[6].value || '';
-      const dateAcquired = inputs[7].value || '';
-      const acqCost = inputs[8].value || '';
-      const refCode = inputs[9].value || '';
+      const dateAcquired = inputs[2].value || '';
+      const acqCost = inputs[3].value || '';
+      const fund = inputs[4].value || '';
+      const endUser = inputs[5].value || '';
+      const requestedBy = inputs[6].value || '';
+      const supplier = inputs[7].value || '';
+      const refCode = inputs[8].value || '';
+      const description = inputs[9].value || '';
 
       // Try to extract QR image/canvas/svg from the live card so it can be embedded in print output.
       // If that fails, generate a fresh data-URL from the card payload as a fallback.
@@ -237,23 +247,21 @@ function printCards() {
         <div class="label-container">
           <div class="top-white-space"></div>
           <div class="color-banner" style="background-color: ${bannerColor};">
-            <h1>CNSC PROPERTY</h1>
-            <div class="logo-shield">
-              <img src="logo.png" onerror="this.style.display='none'" alt="Logo">
-            </div>
+            <h1>UCN PROPERTY</h1>
+            <div class="logo-shield"></div>
           </div>
           
           <div class="form-section">
             <div class="form-row"><label>ICS/PAR No.:</label><div class="value">${icsParNo}</div></div>
             <div class="form-row"><label>Property No.:</label><div class="value">${propertyNo}</div></div>
-            <div class="form-row"><label>Item Description:</label><div class="value">${description}</div></div>
-            <div class="form-row"><label>Requested by:</label><div class="value">${requestedBy}</div></div>
-            <div class="form-row"><label>End-User/Location:</label><div class="value">${endUser}</div></div>
-            <div class="form-row"><label>Supplier:</label><div class="value">${supplier}</div></div>
-            <div class="form-row"><label>Fund:</label><div class="value">${fund}</div></div>
             <div class="form-row"><label>Date Aquired:</label><div class="value">${dateAcquired}</div></div>
             <div class="form-row"><label>Acquisition Cost:</label><div class="value">${acqCost}</div></div>
+            <div class="form-row"><label>Fund:</label><div class="value">${fund}</div></div>
+            <div class="form-row"><label>End-User/Location:</label><div class="value">${endUser}</div></div>
+            <div class="form-row"><label>Requested by:</label><div class="value">${requestedBy}</div></div>
+            <div class="form-row"><label>Supplier:</label><div class="value">${supplier}</div></div>
             <div class="form-row"><label>P.O/J.O/Contract Ref:</label><div class="value">${refCode}</div></div>
+            <div class="form-row"><label>Item Description:</label><div class="value">${description}</div></div>
           </div>
           ${ qrDataUrl ? `<img class="qr-print" src="${qrDataUrl}" style="position:absolute; right:8px; bottom:8px; width:76px; height:76px;" alt="QR">` : '' }
         </div>
