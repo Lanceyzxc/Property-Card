@@ -23,6 +23,165 @@ const defaultLayout = [
 let totalCardCount = 0;
 let uniqueCardId = 0;
 let allCards = [];
+let firebaseFirestore = null;
+let firebaseInitialized = false;
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBRLFZq8U2ZNrHeJ4hatv-Di-24AWGzE4s",
+  authDomain: "ucn-property-tag-cc45e.firebaseapp.com",
+  projectId: "ucn-property-tag-cc45e",
+  storageBucket: "ucn-property-tag-cc45e.firebasestorage.app",
+  messagingSenderId: "91020185928",
+  appId: "1:91020185928:web:14a3b495613b938a22637d",
+  measurementId: "G-NXK5BSZ6M9"
+};
+
+function updateFirebaseStatus(message, color = "#004aad") {
+  const statusEl = document.getElementById('firebase-status');
+  if (!statusEl) return;
+  statusEl.style.color = color;
+  statusEl.innerText = message;
+}
+
+function showModal({ title = 'Notice', message = '', confirmText = 'OK', cancelText = 'Cancel', showCancel = false }) {
+  const overlay = document.getElementById('app-modal-overlay');
+  const titleEl = document.getElementById('modal-title');
+  const messageEl = document.getElementById('modal-message');
+  const confirmBtn = document.getElementById('modal-confirm');
+  const cancelBtn = document.getElementById('modal-cancel');
+
+  if (!overlay || !titleEl || !messageEl || !confirmBtn || !cancelBtn) {
+    return Promise.resolve(false);
+  }
+
+  titleEl.innerText = title;
+  messageEl.innerText = message;
+  confirmBtn.innerText = confirmText;
+  cancelBtn.innerText = cancelText;
+  cancelBtn.style.display = showCancel ? 'inline-flex' : 'none';
+  overlay.classList.remove('hidden');
+
+  return new Promise((resolve) => {
+    function cleanup() {
+      overlay.classList.add('hidden');
+      confirmBtn.removeEventListener('click', handleConfirm);
+      cancelBtn.removeEventListener('click', handleCancel);
+    }
+
+    function handleConfirm() {
+      cleanup();
+      resolve(true);
+    }
+
+    function handleCancel() {
+      cleanup();
+      resolve(false);
+    }
+
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+  });
+}
+
+function showAlert(message, title = 'Notice') {
+  showModal({ title, message, confirmText: 'OK', showCancel: false });
+}
+
+function showConfirm(message, title = 'Confirm') {
+  return showModal({ title, message, confirmText: 'Yes', cancelText: 'No', showCancel: true });
+}
+
+function initializeFirebase() {
+  if (!window.firebase || !firebase.initializeApp) {
+    updateFirebaseStatus("Firebase SDK not loaded", "#9a0603");
+    return;
+  }
+
+  if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+    updateFirebaseStatus("Add Firebase config values in main.js", "#9a0603");
+    return;
+  }
+
+  try {
+    firebase.initializeApp(firebaseConfig);
+    firebaseFirestore = firebase.firestore();
+    firebaseInitialized = true;
+    updateFirebaseStatus("Firestore ready. Edits will auto-save.", "#499632");
+  } catch (err) {
+    console.error('Firebase init error', err);
+    updateFirebaseStatus("Firestore initialization failed", "#9a0603");
+  }
+}
+
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+function getCardData(cardWrapper) {
+  const cardId = cardWrapper.dataset.cardId || '';
+  const deptSelect = cardWrapper.querySelector('.dept-select');
+  const dept = deptSelect ? deptSelect.options[deptSelect.selectedIndex]?.text.trim() : '';
+  const color = deptSelect ? deptSelect.value : departments[0].color;
+  const inputs = cardWrapper.querySelectorAll('.underline-input');
+
+  return {
+    cardId,
+    dept,
+    color,
+    icsParNo: inputs[0] ? inputs[0].value.trim() : '',
+    propertyNo: inputs[1] ? inputs[1].value.trim() : '',
+    dateAcquired: inputs[2] ? inputs[2].value.trim() : '',
+    acquisitionCost: inputs[3] ? inputs[3].value.trim() : '',
+    fund: inputs[4] ? inputs[4].value.trim() : '',
+    endUserLocation: inputs[5] ? inputs[5].value.trim() : '',
+    requestedBy: inputs[6] ? inputs[6].value.trim() : '',
+    supplier: inputs[7] ? inputs[7].value.trim() : '',
+    reference: inputs[8] ? inputs[8].value.trim() : '',
+    itemDescription: inputs[9] ? inputs[9].value.trim() : '',
+    savedAt: new Date().toISOString()
+  };
+}
+
+function saveCardToFirebase(cardWrapper) {
+  if (!firebaseInitialized || !firebaseFirestore) return;
+  if (!cardWrapper) return;
+
+  const data = getCardData(cardWrapper);
+  const hasContent = Object.keys(data).some(key => key !== 'savedAt' && data[key]);
+  if (!hasContent) return;
+
+  const cardId = data.cardId || `card-${Math.random().toString(36).substring(2, 10)}`;
+  const cardDoc = firebaseFirestore.collection('propertyTags').doc(cardId);
+  cardDoc.set(data)
+    .then(() => {
+      updateFirebaseStatus(`Saved card ${cardId}`, "#499632");
+    })
+    .catch((err) => {
+      console.error('Firestore save error', err);
+      updateFirebaseStatus(`Save failed for card ${cardId}`, "#9a0603");
+    });
+}
+
+function setupFirebaseAutoSave(cardWrapper) {
+  if (!cardWrapper) return;
+  const inputs = cardWrapper.querySelectorAll('.underline-input');
+  const selects = cardWrapper.querySelectorAll('.dept-select');
+  const saveOnChange = debounce(() => saveCardToFirebase(cardWrapper), 300);
+
+  inputs.forEach(input => {
+    input.addEventListener('input', saveOnChange);
+    input.addEventListener('change', saveOnChange);
+  });
+
+  selects.forEach(select => {
+    select.addEventListener('change', saveOnChange);
+  });
+}
+
 
 function generateOptions(selectedColor) {
   let optionsHtml = '';
@@ -46,12 +205,41 @@ function addNewCards() {
 
 function toggleAddPanel() {
   const panel = document.getElementById('add-panel');
+  const selectPanel = document.getElementById('select-panel');
   if (!panel) return;
+  if (selectPanel) {
+    selectPanel.classList.remove('open');
+  }
+  const willOpen = !panel.classList.contains('open');
   panel.classList.toggle('open');
+  // Toggle a class on the floating container so we can animate the FAB
+  const container = document.querySelector('.add-card-floating');
+  if (container) container.classList.toggle('open', willOpen);
 }
 
 function closeAddPanel() {
   const panel = document.getElementById('add-panel');
+  if (!panel) return;
+  panel.classList.remove('open');
+}
+
+function toggleSelectPanel() {
+  const panel = document.getElementById('select-panel');
+  const addPanel = document.getElementById('add-panel');
+  if (!panel) return;
+  if (addPanel) {
+    addPanel.classList.remove('open');
+  }
+  const willOpen = !panel.classList.contains('open');
+  panel.classList.toggle('open');
+  setSelectionMode(willOpen);
+  // Toggle a class on the floating container so we can animate the FAB
+  const container = document.querySelector('.select-card-floating');
+  if (container) container.classList.toggle('open', willOpen);
+}
+
+function closeSelectPanel() {
+  const panel = document.getElementById('select-panel');
   if (!panel) return;
   panel.classList.remove('open');
 }
@@ -63,7 +251,20 @@ function addCards(amount) {
   }
 }
 
-function createSingleCard(initColor) {
+function restoreDefaultCards() {
+  const container = document.getElementById('pages-container');
+  if (!container) return;
+  container.innerHTML = '';
+  totalCardCount = 0;
+  uniqueCardId = 0;
+  allCards = [];
+
+  for (let i = 0; i < defaultLayout.length; i++) {
+    createSingleCard(defaultLayout[i]);
+  }
+}
+
+function createSingleCard(initColor, cardData = null) {
   const container = document.getElementById('pages-container');
   let pages = container.querySelectorAll('.page-wrapper');
   let lastPageGrid = null;
@@ -87,6 +288,9 @@ function createSingleCard(initColor) {
   const cardHtml = `
     <div class="card-ui-wrapper" id="card-wrapper-${currentIndex}">
       <div class="card-header-control">
+        <label class="card-select-wrapper" title="Select card">
+          <input type="checkbox" class="card-select" onchange="onCardCheckboxChange(this)">
+        </label>
         <select class="neu-select dept-select" style="flex-grow: 1;" onchange="updateCardColor(this, ${currentIndex})">
           ${generateOptions(initColor)}
         </select>
@@ -101,7 +305,7 @@ function createSingleCard(initColor) {
         <div class="form-section">
           <div class="form-row"><label>ICS/PAR No.:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>Property No.:</label><input type="text" class="underline-input"></div>
-          <div class="form-row"><label>Date Aquired:</label><input type="text" class="underline-input"></div>
+          <div class="form-row"><label>Date Acquired:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>Acquisition Cost:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>Fund:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>End-User/Location:</label><input type="text" class="underline-input"></div>
@@ -116,7 +320,45 @@ function createSingleCard(initColor) {
 
   lastPageGrid.insertAdjacentHTML('beforeend', cardHtml);
   const newCard = lastPageGrid.lastElementChild;
+  newCard.dataset.cardId = cardData && cardData.cardId ? cardData.cardId : `card-${currentIndex}`;
   allCards.push(newCard);
+
+  // Card click toggles selection when selection-mode is active
+  newCard.addEventListener('click', function(e) {
+    if (!document.body.classList.contains('selection-mode')) return;
+    // Don't toggle when interacting with form controls inside the card
+    if (e.target.closest('input') || e.target.closest('select') || e.target.closest('textarea') || e.target.closest('button')) return;
+    const cb = newCard.querySelector('.card-select');
+    if (!cb) return;
+    cb.checked = !cb.checked;
+    newCard.classList.toggle('selected', cb.checked);
+    updateSelectionCount();
+  });
+
+  if (cardData) {
+    const deptSelect = newCard.querySelector('.dept-select');
+    if (deptSelect && cardData.dept) {
+      const optionToSelect = Array.from(deptSelect.options).find(opt => opt.text.trim() === cardData.dept);
+      if (optionToSelect) {
+        optionToSelect.selected = true;
+        updateCardColor(deptSelect, currentIndex);
+      }
+    }
+
+    const inputs = newCard.querySelectorAll('.underline-input');
+    if (inputs[0]) inputs[0].value = cardData.icsParNo || '';
+    if (inputs[1]) inputs[1].value = cardData.propertyNo || '';
+    if (inputs[2]) inputs[2].value = cardData.dateAcquired || '';
+    if (inputs[3]) inputs[3].value = cardData.acquisitionCost || '';
+    if (inputs[4]) inputs[4].value = cardData.fund || '';
+    if (inputs[5]) inputs[5].value = cardData.endUserLocation || '';
+    if (inputs[6]) inputs[6].value = cardData.requestedBy || '';
+    if (inputs[7]) inputs[7].value = cardData.supplier || '';
+    if (inputs[8]) inputs[8].value = cardData.reference || '';
+    if (inputs[9]) inputs[9].value = cardData.itemDescription || '';
+  }
+
+  setupFirebaseAutoSave(newCard);
   // Attach auto-resize behavior to any textarea inside the new card
   const textareas = newCard.querySelectorAll('textarea.auto-resize');
   textareas.forEach((ta) => {
@@ -181,13 +423,158 @@ function createSingleCard(initColor) {
   });
 }
 
-function deleteCard(btnElement) {
+async function deleteCard(btnElement) {
   const cardWrapper = btnElement.closest('.card-ui-wrapper');
+  if (!cardWrapper) return;
+
   allCards = allCards.filter(card => card !== cardWrapper);
   cardWrapper.remove();
   totalCardCount--;
   reorganizePages();
   refreshDashboardSummary();
+  updateSelectionCount();
+  updateFirebaseStatus('Deleting card...', '#004aad');
+
+  if (allCards.length === 0) {
+    restoreDefaultCards();
+    refreshDashboardSummary();
+  }
+
+  deleteCardRecord(cardWrapper).catch(() => {
+    updateFirebaseStatus('Card removed locally, but delete failed on the server.', '#9a0603');
+  });
+
+  if (allCards.length === 0) {
+    showAlert('Card deleted successfully. No cards remained, so the default cards have been restored.');
+  } else {
+    showAlert('Card deleted successfully.');
+  }
+}
+
+function getSelectedCards() {
+  const checkedBoxes = document.querySelectorAll('.card-ui-wrapper .card-select:checked');
+  return Array.from(checkedBoxes).map(cb => cb.closest('.card-ui-wrapper')).filter(Boolean);
+}
+
+function updateSelectionCount() {
+  const count = getSelectedCards().length;
+  const countEl = document.getElementById('batch-selection-count');
+  if (countEl) {
+    countEl.innerText = `Selected: ${count}`;
+  }
+}
+
+function selectVisibleCards() {
+  const allCardWrappers = document.querySelectorAll('.card-ui-wrapper');
+  allCardWrappers.forEach(card => {
+    if (card.offsetParent !== null) {
+      const checkbox = card.querySelector('.card-select');
+      if (checkbox) checkbox.checked = true;
+      if (card) card.classList.add('selected');
+    }
+  });
+  updateSelectionCount();
+}
+
+function selectAllCards() {
+  const allCardWrappers = document.querySelectorAll('.card-ui-wrapper');
+  allCardWrappers.forEach(card => {
+    const checkbox = card.querySelector('.card-select');
+    if (checkbox) checkbox.checked = true;
+    if (card) card.classList.add('selected');
+  });
+  updateSelectionCount();
+}
+
+function clearSelection() {
+  const allCardWrappers = document.querySelectorAll('.card-ui-wrapper');
+  allCardWrappers.forEach(card => {
+    const checkbox = card.querySelector('.card-select');
+    if (checkbox) checkbox.checked = false;
+    card.classList.remove('selected');
+  });
+  updateSelectionCount();
+}
+
+function onCardCheckboxChange(el) {
+  const card = el.closest('.card-ui-wrapper');
+  if (!card) return;
+  card.classList.toggle('selected', el.checked);
+  updateSelectionCount();
+}
+
+function setSelectionMode(enabled) {
+  document.body.classList.toggle('selection-mode', enabled);
+}
+
+async function deleteCardRecord(cardWrapper) {
+  if (!firebaseInitialized || !firebaseFirestore) return;
+  const cardId = cardWrapper.dataset.cardId;
+  if (!cardId) return;
+
+  try {
+    await firebaseFirestore.collection('propertyTags').doc(cardId).delete();
+  } catch (err) {
+    console.warn('Firestore delete failed', err);
+  }
+}
+
+async function deleteSelectedCards() {
+  const selectedCards = getSelectedCards();
+  if (selectedCards.length === 0) {
+    showAlert('No cards selected for deletion.');
+    return;
+  }
+
+  const confirmDelete = await showConfirm(`Delete ${selectedCards.length} selected card(s)? This will also remove saved cards from the database.`);
+  if (!confirmDelete) return;
+
+  // Remove cards from the UI first so the app feels responsive.
+  selectedCards.forEach((cardWrapper) => {
+    allCards = allCards.filter(card => card !== cardWrapper);
+    cardWrapper.remove();
+    totalCardCount--;
+  });
+  reorganizePages();
+  refreshDashboardSummary();
+  clearSelection();
+  updateFirebaseStatus('Deleting selected cards...', '#004aad');
+
+  if (allCards.length === 0) {
+    restoreDefaultCards();
+    refreshDashboardSummary();
+  }
+
+  const deletePromises = selectedCards.map((cardWrapper) => deleteCardRecord(cardWrapper));
+
+  if (allCards.length === 0) {
+    setTimeout(() => showAlert('Selected cards were deleted successfully. No cards remained, so the default cards have been restored.'), 200);
+  } else {
+    setTimeout(() => showAlert('Selected cards were deleted successfully.'), 200);
+  }
+
+  Promise.all(deletePromises)
+    .then(() => updateFirebaseStatus('Delete completed.', '#499632'))
+    .catch(() => updateFirebaseStatus('Some deletes failed on the server.', '#9a0603'));
+}
+
+function applyBatchAction() {
+  // This UI now uses explicit icon buttons; keep function for backward compatibility.
+  const selectedCards = getSelectedCards();
+  if (selectedCards.length === 0) {
+    showAlert('Select at least one card to perform a batch action.');
+    return;
+  }
+  // default no-op
+}
+
+function printSelected() {
+  const selected = getSelectedCards();
+  if (!selected || selected.length === 0) {
+    showAlert('No cards selected to print.');
+    return;
+  }
+  printCards(selected);
 }
 
 // Reflow cards into pages. If `cardsList` is provided, that list/order is used.
@@ -218,9 +605,47 @@ function updateCardColor(selectElement, index) {
   banner.style.backgroundColor = selectElement.value;
 }
 
-// Initialize layout on load with exactly 10 cards (1 page)
-window.onload = function() {
-  addCards(10);
+async function loadCardsFromFirestore() {
+  if (!firebaseInitialized || !firebaseFirestore) return false;
+  updateFirebaseStatus("Loading saved cards...", "#004aad");
+
+  try {
+    const snapshot = await firebaseFirestore.collection('propertyTags').get();
+    if (snapshot.empty) {
+      updateFirebaseStatus("No saved cards found. Starting fresh.", "#004aad");
+      return false;
+    }
+
+    document.getElementById('pages-container').innerHTML = '';
+    totalCardCount = 0;
+    uniqueCardId = 0;
+    allCards = [];
+
+    snapshot.forEach((doc) => {
+      const cardData = doc.data();
+      const deptName = cardData.dept || '';
+      const matchedDept = departments.find(d => d.name === deptName);
+      const color = cardData.color || (matchedDept ? matchedDept.color : departments[0].color);
+      cardData.cardId = doc.id;
+      createSingleCard(color, cardData);
+    });
+
+    updateFirebaseStatus(`Loaded ${snapshot.size} saved cards.`, "#499632");
+    return true;
+  } catch (err) {
+    console.error('Firestore load error', err);
+    updateFirebaseStatus("Unable to load saved cards", "#9a0603");
+    return false;
+  }
+}
+
+// Initialize layout on load with saved cards if available
+window.onload = async function() {
+  initializeFirebase();
+  const loaded = await loadCardsFromFirestore();
+  if (!loaded) {
+    addCards(10);
+  }
   buildFilterOptions();
   // Wire up filter UI
   const filterSelect = document.getElementById('filter-dept');
@@ -235,13 +660,64 @@ window.onload = function() {
   filterSelect.addEventListener('change', () => { applyFilter(); refreshDashboardSummary(); });
   searchInput.addEventListener('input', () => { applyFilter(); refreshDashboardSummary(); });
 
-  // Close add panel when user clicks outside of it
+  const selectPanel = document.getElementById('select-panel');
+  const selectFab = document.getElementById('select-fab');
+
+  // Floating search elements
+  const floatingSearch = document.getElementById('floating-search');
+  const searchPanelEl = document.getElementById('search-panel');
+  const searchTrigger = document.getElementById('search-trigger');
+  // `searchInput` is already retrieved above
+  if (floatingSearch && searchPanelEl && searchTrigger && searchInput) {
+    const openSearch = () => {
+      floatingSearch.classList.add('open');
+    };
+    const closeSearch = () => {
+      if (document.activeElement === searchInput) return;
+      floatingSearch.classList.remove('open');
+    };
+
+    floatingSearch.addEventListener('mouseenter', openSearch);
+    floatingSearch.addEventListener('mouseleave', () => { if (document.activeElement !== searchInput) closeSearch(); });
+
+    searchTrigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      openSearch();
+      searchInput.focus();
+    });
+
+    searchInput.addEventListener('focus', openSearch);
+    searchInput.addEventListener('blur', () => { setTimeout(() => { if (document.activeElement !== searchInput) closeSearch(); }, 120); });
+    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Escape') { searchInput.blur(); closeSearch(); } });
+  }
+
+  // Close panels when user clicks outside of them, but ignore card-area clicks
   document.addEventListener('click', (e) => {
-    if (!addPanel || !addFab) return;
-    const clickedInsidePanel = addPanel.contains(e.target);
-    const clickedFab = addFab.contains(e.target);
-    if (!clickedInsidePanel && !clickedFab) {
+    const target = e.target;
+
+    // If user clicked on a card (or inside it), do nothing — this prevents panels
+    // from closing while interacting with many cards.
+    if (target.closest && target.closest('.card-ui-wrapper')) return;
+
+    const clickedInsideAdd = addPanel && addPanel.contains(target);
+    const clickedAddFab = addFab && addFab.contains(target);
+    const clickedInsideSelect = selectPanel && selectPanel.contains(target);
+    const clickedSelectFab = selectFab && selectFab.contains(target);
+
+    if (!clickedInsideAdd && !clickedAddFab) {
       closeAddPanel();
+    }
+    if (!clickedInsideSelect && !clickedSelectFab) {
+      closeSelectPanel();
+      setSelectionMode(false);
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeAddPanel();
+      closeSelectPanel();
+      setSelectionMode(false);
     }
   });
 
@@ -261,7 +737,6 @@ function refreshDashboardSummary() {
 
   document.getElementById('summary-total-cards').innerText = totalCards;
   document.getElementById('summary-visible-cards').innerText = visibleCards;
-  document.getElementById('summary-departments').innerText = uniqueDepartments.size;
 }
 
 // --- EXCEL PROCESSING LOGIC ---
@@ -386,64 +861,66 @@ function populateFromExcel(dataRows) {
     // 4. Map the EXACT Excel cell data gamit ang bago nating Smart Reader (getExcelValue) at formatValue
     
     // Line 1: ICS/PAR No.
-    let ics = formatValue(getExcelValue(row, 'ICS No. (If Applicable)'));
-    let par = formatValue(getExcelValue(row, 'PAR No.(If Applicable)'));
+    let ics = formatValue(getExcelValue(row, 'ICS No. (If Applicable)') || getExcelValue(row, 'ICS/PAR No.') || getExcelValue(row, 'ICS No.'));
+    let par = formatValue(getExcelValue(row, 'PAR No.(If Applicable)') || getExcelValue(row, 'PAR No.') || getExcelValue(row, 'PAR No'));
     let icsParVal = '';
     
     if (ics && ics !== 'N/A') {
-        icsParVal = ics; // Kung may totoong number ang ICS
+        icsParVal = ics;
     } else if (par && par !== 'N/A') {
-        icsParVal = par; // Kung may totoong number ang PAR
+        icsParVal = par;
     } else if (ics === 'N/A' || par === 'N/A') {
-        icsParVal = 'N/A'; // Kung parehong N/A o kung isa sa kanila ay N/A at blangko ang isa
+        icsParVal = 'N/A';
     }
     inputs[0].value = icsParVal;
     
     // Line 2: Property No.
-    inputs[1].value = formatValue(getExcelValue(row, 'Property No./Item No.'));
+    inputs[1].value = formatValue(getExcelValue(row, 'Property No.') || getExcelValue(row, 'Property No./Item No.') || getExcelValue(row, 'Item No.'));
     
-    // Line 3: Description 
-    inputs[2].value = formatValue(getExcelValue(row, 'Items Description'));
-    // If this is a textarea with auto-resize, trigger its adjust (if attached)
-    if (inputs[2] && inputs[2].tagName === 'TEXTAREA') {
-      // trigger input event to let attached listener resize
-      const ev = new Event('input', { bubbles: true });
-      inputs[2].dispatchEvent(ev);
-    }
+    // Line 3: Date Acquired
+    inputs[2].value = formatValue(getExcelValue(row, 'Date Acquired') || getExcelValue(row, 'Date Delivered'));
     
-    // Line 4: Requested by -> (End User)
-    inputs[3].value = formatValue(getExcelValue(row, 'End User'));
-    
-    // Line 5: End-User/Location -> (Department)
-    inputs[4].value = formatValue(getExcelValue(row, 'Department'));
-    
-    // Line 6: Supplier
-    inputs[5].value = formatValue(getExcelValue(row, 'Supplier'));
-    
-    // Line 7: Fund
-    inputs[6].value = formatValue(getExcelValue(row, 'Fund'));
-    
-    // Line 8: Date Delivered / Acquired -> (Date Delivered)
-    inputs[7].value = formatValue(getExcelValue(row, 'Date Delivered'));
-    
-    // Line 9: Cost -> (Unit Cost)
-    let cost = getExcelValue(row, 'Unit Cost');
+    // Line 4: Acquisition Cost
+    let cost = getExcelValue(row, 'Acquisition Cost') || getExcelValue(row, 'Unit Cost') || getExcelValue(row, 'Cost');
     let costStr = cost !== undefined && cost !== null ? cost.toString().trim() : '';
     
     if (costStr.toLowerCase() === 'n/a') {
-        inputs[8].value = 'N/A';
+        inputs[3].value = 'N/A';
     } else {
-        // Mas pinatibay na cleaner para sa numbers/currency mula sa Excel
         let cleanCost = costStr.replace(/[^0-9.-]+/g, ''); 
         if(!isNaN(cleanCost) && cleanCost !== "") {
-            inputs[8].value = Number(cleanCost).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+            inputs[3].value = Number(cleanCost).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
         } else {
-            inputs[8].value = formatValue(cost); // Fallback kung text
+            inputs[3].value = formatValue(cost);
         }
     }
     
-    // Line 10: Reference
-    inputs[9].value = formatValue(getExcelValue(row, 'Reference'));
+    // Line 5: Fund
+    inputs[4].value = formatValue(getExcelValue(row, 'Fund'));
+    
+    // Line 6: End-User/Location
+    inputs[5].value = formatValue(getExcelValue(row, 'End-User/Location') || getExcelValue(row, 'End User') || getExcelValue(row, 'Location'));
+    
+    // Line 7: Requested by
+    inputs[6].value = formatValue(getExcelValue(row, 'Requested by'));
+    
+    // Line 8: Supplier
+    inputs[7].value = formatValue(getExcelValue(row, 'Supplier'));
+    
+    // Line 9: Reference
+    inputs[8].value = formatValue(getExcelValue(row, 'P.O/J.O/Contract Ref') || getExcelValue(row, 'PO/J.O/Contract Ref') || getExcelValue(row, 'Reference'));
+    
+    // Line 10: Item Description
+    inputs[9].value = formatValue(getExcelValue(row, 'Item Description') || getExcelValue(row, 'Items Description'));
+    
+    // If this is a textarea with auto-resize, trigger its adjust (if attached)
+    if (inputs[9] && inputs[9].tagName === 'TEXTAREA') {
+      const ev = new Event('input', { bubbles: true });
+      inputs[9].dispatchEvent(ev);
+    }
+
+    // Auto-save the imported card immediately after fields are populated
+    saveCardToFirebase(newCard);
   });
 
   // Refresh department filter options after import

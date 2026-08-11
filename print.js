@@ -4,9 +4,9 @@
  * Uses a hidden iframe to prevent flashing/opening new tabs.
  */
 
-function printCards() {
-  // 1. Gather all cards currently visible in the DOM
-  const cards = document.querySelectorAll('.card-ui-wrapper');
+function printCards(cardsToPrint = null) {
+  // 1. Gather cards to print from the DOM or from the provided selection
+  const cards = cardsToPrint ? Array.from(cardsToPrint) : Array.from(document.querySelectorAll('.card-ui-wrapper'));
   
   if (cards.length === 0) {
     alert("No cards available to print!");
@@ -254,7 +254,7 @@ function printCards() {
           <div class="form-section">
             <div class="form-row"><label>ICS/PAR No.:</label><div class="value">${icsParNo}</div></div>
             <div class="form-row"><label>Property No.:</label><div class="value">${propertyNo}</div></div>
-            <div class="form-row"><label>Date Aquired:</label><div class="value">${dateAcquired}</div></div>
+            <div class="form-row"><label>Date Acquired:</label><div class="value">${dateAcquired}</div></div>
             <div class="form-row"><label>Acquisition Cost:</label><div class="value">${acqCost}</div></div>
             <div class="form-row"><label>Fund:</label><div class="value">${fund}</div></div>
             <div class="form-row"><label>End-User/Location:</label><div class="value">${endUser}</div></div>
