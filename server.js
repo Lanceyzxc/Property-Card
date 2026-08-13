@@ -2,7 +2,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const hostname = '127.0.0.1';
+// Bind to all interfaces so the dev server is reachable from other devices on the LAN
+const hostname = '0.0.0.0';
 const rootDir = __dirname;
 const defaultPort = Number(process.env.PORT) || 3000;
 

@@ -5,9 +5,9 @@
 <title>UCN ProCard System</title>
 <!-- Add SheetJS Library to parse Excel Files in the browser -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=20260812.1">
 <link rel="icon" href="ucn.png" type="image/x-icon">
-</head>
+</meta>
 <body>
 
 <aside class="sidebar">
@@ -23,10 +23,6 @@
     <div class="summary-box">
       <div class="summary-label">Visible</div>
       <div class="summary-value" id="summary-visible-cards">0</div>
-    </div>
-    <div class="summary-box">
-      <div class="summary-label">Depts</div>
-      <div class="summary-value" id="summary-departments">0</div>
     </div>
   </div>
 
@@ -48,16 +44,9 @@
       Load Data
     </button>
     <div id="upload-status" style="font-size: 12px; color: #9a0603; text-align: center; font-weight: bold;"></div>
-    <p style="font-size: 11px; color: #666; margin: 0; text-align: center;">
-      <b>Headers format in Excel:</b><br>
-      Department, ICS/PAR No., Property No., Item Description, Requested by, End-User/Location, Date Acquired, Acquisition Cost, P.O/J.O/Contract Ref
-    </p>
   </div>
 
-  <div class="control-group">
-    <label>Search</label>
-    <input type="text" id="search-query" class="neu-input" style="text-align: left;" placeholder="Search property no, item, user, supplier...">
-  </div>
+  <!-- Search moved to floating top-right widget -->
 
   <div class="control-group">
     <label>Filter</label>
@@ -68,22 +57,23 @@
     <div class="btn-row">
       <button class="neu-btn" style="flex:1;" id="reset-filter">Reset</button>
     </div>
-    <hr style="border-top: 1px solid #ccc; width: 100%; margin: 5px 0; border-color: var(--neumorphic-dark);">
-    <hr style="border-top: 1px solid #ccc; width: 100%; margin: 5px 0; border-color: var(--neumorphic-dark);">
-<button class="neu-btn neu-btn-print" onclick="printCards()">
-  <span class="print-icon">
-    <!-- SVG Printer Icon with animated parts -->
-    <svg class="printer-svg" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <!-- Top Paper -->
-      <polyline class="paper-top" points="6 9 6 2 18 2 18 9"></polyline>
-      <!-- Printer Body -->
-      <path class="printer-body" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-      <!-- Bottom Paper (Printed) -->
-      <rect class="paper-bottom" x="6" y="14" width="12" height="8"></rect>
-    </svg>
-  </span> 
-  Print Cards
-</button>
+  </div>
+
+  <!-- Sidebar footer (anchored at bottom) -->
+  <div class="sidebar-footer">
+    <button class="neu-btn neu-btn-print" onclick="printCards()">
+      <span class="print-icon">
+        <svg class="printer-svg" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline class="paper-top" points="6 9 6 2 18 2 18 9"></polyline>
+          <path class="printer-body" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect class="paper-bottom" x="6" y="14" width="12" height="8"></rect>
+        </svg>
+      </span>
+      Print Cards
+    </button>
+    <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+      <!-- QR regeneration is automatic now; removed manual regenerate button and public base URL input -->
+    </div>
   </div>
 
 </aside>
@@ -115,7 +105,69 @@
   </div>
 </div>
 
-<script src="main.js"></script>
-<script src="print.js"></script>
+<div class="select-card-floating">
+  <button class="select-fab" id="select-fab" onclick="toggleSelectPanel()" aria-label="Open Batch Actions" title="Batch Actions">✔</button>
+  <div class="select-panel" id="select-panel">
+    <label>Batch Actions</label>
+    <div class="btn-row">
+      <button class="neu-btn" onclick="selectAllCards()" type="button">Select All</button>
+      <button class="neu-btn" onclick="selectVisibleCards()" type="button">Select Visible</button>
+      <button class="neu-btn" onclick="clearSelection()" type="button">Clear Selection</button>
+    </div>
+    <div class="btn-row" style="margin-top: 10px; gap:10px;">
+      <button class="neu-btn icon-action" title="Print Selected" onclick="printSelected()" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+      </button>
+      <button class="neu-btn icon-action" title="Delete Selected" onclick="deleteSelectedCards()" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+          <path d="M10 11v6"></path>
+          <path d="M14 11v6"></path>
+          <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+        </svg>
+      </button>
+    </div>
+    <div id="batch-selection-count" style="font-size: 12px; color: #333; margin-top: 10px;">Selected: 0</div>
+  </div>
+</div>
+
+<!-- App modal for confirmations and alerts -->
+<div id="app-modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-window">
+    <div class="modal-title" id="modal-title">Notice</div>
+    <div class="modal-message" id="modal-message">Message goes here</div>
+    <div class="modal-actions">
+      <button class="neu-btn" id="modal-cancel" type="button">Cancel</button>
+      <button class="neu-btn primary" id="modal-confirm" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Floating collapsible search (top-right) -->
+<div class="floating-search" id="floating-search">
+  <button class="search-trigger" id="search-trigger" aria-label="Search">
+    <img src="ucn.png" alt="logo" class="search-logo">
+  </button>
+  <div class="search-panel" id="search-panel">
+    <button class="search-icon" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </button>
+    <input type="text" id="search-query" class="neu-input search-input" placeholder="">
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="main.js?v=20260812.1"></script>
+<script src="print.js?v=20260812.1"></script>
 </body>
 </html>

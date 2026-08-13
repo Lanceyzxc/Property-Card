@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Custodian Slip</title>
+    <style>
+        /* General Setup */
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            color: #000;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .document-container {
+            width: 800px;
+            min-height: 1050px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 40px 50px;
+            box-sizing: border-box;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        /* Header Elements */
+        .annex {
+            text-align: right;
+            font-size: 11px;
+            margin-bottom: 30px;
+            padding-right: 50px;
+        }
+        .title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+        .info-section {
+            margin-bottom: 10px;
+            font-size: 11px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        .entity-line {
+            width: 100%;
+        }
+        .cluster-line {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .underline {
+            display: inline-block;
+            border-bottom: 1px solid #000;
+        }
+
+        /* Table Structure */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000; /* Thick outer boundary */
+        }
+        
+        /* Borders for cells: Thick verticals, thin horizontals */
+        th, td {
+            border-right: 2px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 2px 4px;
+            vertical-align: top;
+        }
+        /* Remove right border on the last column to prevent doubling with table border */
+        th:last-child, td:last-child {
+            border-right: none;
+        }
+
+        /* Table Headers */
+        th {
+            text-align: center;
+            vertical-align: middle;
+            font-weight: normal;
+            font-size: 11px;
+            padding: 5px 2px;
+        }
+        .header-bottom-thick {
+            border-bottom: 2px solid #000 !important;
+        }
+        .valign-bottom {
+            vertical-align: bottom;
+            padding-bottom: 5px;
+        }
+
+        /* Specific Column Widths */
+        .col-qty { width: 8%; }
+        .col-unit { width: 7%; }
+        .col-ucost { width: 9%; }
+        .col-tcost { width: 10%; }
+        .col-desc { width: 36%; }
+        .col-item { width: 13%; }
+        .col-life { width: 17%; }
+
+        /* Empty Rows */
+        tbody tr td {
+            height: 18px; /* Uniform height for the blank rows */
+        }
+
+        /* Signatories Box */
+        .footer-row td {
+            border-top: 2px solid #000;
+            height: 150px;
+            padding: 5px 10px;
+            vertical-align: top;
+            border-bottom: none; /* Let the outer table border handle the bottom */
+        }
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .sign-label {
+            margin-bottom: 40px;
+        }
+        .sign-details {
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .sign-line {
+            border-bottom: 1px solid #000;
+            width: 70%;
+            margin-bottom: 3px;
+        }
+        .sign-sub {
+            font-size: 10px;
+            margin-bottom: 3px;
+        }
+        .sign-date-pos {
+            font-size: 10px;
+            margin-bottom: 3px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="document-container">
+    <div class="annex">Annex A.3</div>
+    
+    <div class="title">INVENTORY CUSTODIAN SLIP</div>
+    
+    <div class="info-section">
+        <div class="info-row entity-line">
+            Entity Name : <strong>CAMARINES NORTE STATE COLLEGE</strong>
+        </div>
+        <div class="info-row cluster-line">
+            <div>Fund Cluster : <span class="underline" style="width: 180px;">&nbsp;</span></div>
+            <div>ICS No. <span class="underline" style="width: 180px;">&nbsp;</span></div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th rowspan="2" class="col-qty header-bottom-thick">Quantity</th>
+                <th rowspan="2" class="col-unit header-bottom-thick">Unit</th>
+                <th colspan="2">Amount</th>
+                <th rowspan="2" class="col-desc header-bottom-thick">Description</th>
+                <th rowspan="2" class="col-item header-bottom-thick">Item No.</th>
+                <th rowspan="2" class="col-life header-bottom-thick valign-bottom">Estimated Useful Life</th>
+            </tr>
+            <tr>
+                <th class="col-ucost header-bottom-thick">Unit Cost</th>
+                <th class="col-tcost header-bottom-thick">Total Cost</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Creating 23 empty rows to perfectly match the grid layout height -->
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        </tbody>
+        <tfoot>
+            <tr class="footer-row">
+                <td colspan="4">
+                    <div class="footer-content">
+                        <div class="sign-label">Received from :</div>
+                        <div class="sign-details">
+                            <div class="sign-line"></div>
+                            <div class="sign-sub">Signature Over Printed Name</div>
+                            <div class="sign-date-pos">Position/Office</div>
+                            <div class="sign-date-pos">Date</div>
+                        </div>
+                    </div>
+                </td>
+                <td colspan="3">
+                    <div class="footer-content">
+                        <div class="sign-label">Received by:</div>
+                        <div class="sign-details">
+                            <div class="sign-line"></div>
+                            <div class="sign-sub">Signature Over Printed Name</div>
+                            <div class="sign-date-pos">Position/Office</div>
+                            <div class="sign-date-pos">Date</div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+</body>
+</html>
