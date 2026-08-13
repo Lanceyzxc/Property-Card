@@ -163,13 +163,17 @@ function printCards(cardsToPrint = null) {
       try {
         // Prefer using existing payload collector if available
         var payload = (typeof collectCardPayload === 'function') ? collectCardPayload(card) : null;
-        var text = payload ? JSON.stringify(payload) : '';
+        // Use short URL or cardId to avoid QR overflow
+        var text = '';
+        if (payload) {
+          text = payload.url || (payload.cardId ? (window.location.origin + window.location.pathname + '?id=' + encodeURIComponent(payload.cardId)) : '');
+        }
         // create temp container off-screen
         const tmp = document.createElement('div');
         tmp.style.position = 'absolute'; tmp.style.left = '-9999px'; tmp.style.top = '-9999px';
         document.body.appendChild(tmp);
         try {
-          new QRCode(tmp, { text: text, width: 88, height: 88 });
+          new QRCode(tmp, { text: text, width: 88, height: 88, correctLevel: QRCode.CorrectLevel.M });
         } catch (e) {
           // QR library may not be available
         }

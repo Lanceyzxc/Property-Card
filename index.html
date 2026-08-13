@@ -71,6 +71,10 @@
       </span>
       Print Cards
     </button>
+    <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+      <button class="neu-btn" style="background:#fff; padding:8px 12px;" onclick="regenerateAllQRCodes()">Regenerate QR (use current origin)</button>
+      <input id="public-base-url" type="text" placeholder="Optional public base URL (https://... )" style="flex:1; padding:8px; border-radius:6px; border:1px solid #ccc;" />
+    </div>
   </div>
 
 </aside>
@@ -163,6 +167,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="main.js?v=20260812.1"></script>
 <script src="print.js?v=20260812.1"></script>
 </body>

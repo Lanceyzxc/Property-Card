@@ -155,15 +155,73 @@ function saveCardToFirebase(cardWrapper) {
   if (!hasContent) return;
 
   const cardId = data.cardId || `card-${Math.random().toString(36).substring(2, 10)}`;
+  data.cardId = cardId;
+  // Persist a short QR URL using either a provided public base URL or the current origin
+  try {
+    const publicBase = (typeof window !== 'undefined' && document.getElementById('public-base-url')) ? document.getElementById('public-base-url').value.trim() : '';
+    const baseToUse = publicBase || window.location.origin;
+    data.qrUrl = `${baseToUse.replace(/\/$/, '')}/par.html?id=${encodeURIComponent(cardId)}`;
+    // Save public base in localStorage for convenience
+    try { if (publicBase) localStorage.setItem('publicBaseUrl', publicBase); } catch (e) {}
+  } catch (e) {
+    data.qrUrl = '';
+  }
   const cardDoc = firebaseFirestore.collection('propertyTags').doc(cardId);
   cardDoc.set(data)
     .then(() => {
+      cardWrapper.dataset.cardId = cardId;
+      renderCardQRCode(cardWrapper);
       updateFirebaseStatus(`Saved card ${cardId}`, "#499632");
     })
     .catch((err) => {
       console.error('Firestore save error', err);
       updateFirebaseStatus(`Save failed for card ${cardId}`, "#9a0603");
     });
+}
+
+// Re-generate QR for every card in the UI and persist the current origin QR URL
+function regenerateAllQRCodes() {
+  if (!firebaseInitialized || !firebaseFirestore) {
+    showAlert('Firestore not initialized. Cannot regenerate QR.');
+    return;
+  }
+
+  if (!allCards || allCards.length === 0) {
+    showAlert('No cards found to regenerate.');
+    return;
+  }
+
+  showConfirm('Regenerate and save QR URLs for all visible cards?').then((ok) => {
+    if (!ok) return;
+    updateFirebaseStatus('Regenerating QR for all cards...', '#004aad');
+    const promises = allCards.map(card => {
+      try {
+        return new Promise((resolve) => {
+          saveCardToFirebase(card);
+          setTimeout(() => resolve(true), 200);
+        });
+      } catch (e) {
+        return Promise.resolve(false);
+      }
+    });
+
+    Promise.all(promises).then(() => {
+      updateFirebaseStatus('QR regeneration complete.', '#499632');
+      showAlert('QR regeneration finished. Reprint if necessary.');
+    }).catch(() => {
+      updateFirebaseStatus('Some QR regenerations failed.', '#9a0603');
+      showAlert('Some QR regenerations failed. Check console.');
+    });
+  });
+}
+
+// Load saved public base URL into the UI on startup
+function loadPublicBaseUrl() {
+  try {
+    const saved = localStorage.getItem('publicBaseUrl') || '';
+    const input = document.getElementById('public-base-url');
+    if (input) input.value = saved;
+  } catch (e) {}
 }
 
 function setupFirebaseAutoSave(cardWrapper) {
@@ -173,15 +231,85 @@ function setupFirebaseAutoSave(cardWrapper) {
   const saveOnChange = debounce(() => saveCardToFirebase(cardWrapper), 300);
 
   inputs.forEach(input => {
-    input.addEventListener('input', saveOnChange);
-    input.addEventListener('change', saveOnChange);
+    input.addEventListener('input', () => {
+      saveOnChange();
+      if (input.tagName === 'TEXTAREA') {
+        // Regenerate QR on text change so print preview stays current
+        renderCardQRCode(cardWrapper);
+      }
+    });
+    input.addEventListener('change', () => {
+      saveOnChange();
+      renderCardQRCode(cardWrapper);
+    });
   });
 
   selects.forEach(select => {
-    select.addEventListener('change', saveOnChange);
+    select.addEventListener('change', () => {
+      saveOnChange();
+      renderCardQRCode(cardWrapper);
+    });
   });
 }
 
+function renderCardQRCode(cardWrapper) {
+  if (!window.QRCode) {
+    return;
+  }
+  const qrContainer = cardWrapper.querySelector('.qr-box');
+  if (!qrContainer) return;
+  qrContainer.innerHTML = '';
+
+  const payload = collectCardPayload(cardWrapper);
+  if (!payload) return;
+
+  // Use a short payload only (prefer full URL) to avoid QR code "code length overflow" errors
+  const shortText = payload.url || (payload.cardId ? `${window.location.origin}${window.location.pathname}?id=${encodeURIComponent(payload.cardId)}` : payload.cardId || '');
+  if (!shortText) return;
+
+  try {
+    // Use medium error correction to fit more data in small symbols when necessary
+    new QRCode(qrContainer, {
+      text: shortText,
+      width: 86,
+      height: 86,
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch (err) {
+    qrContainer.innerHTML = '<span style="font-size:10px; color:#900;">QR failed</span>';
+    console.warn('QR render error', err);
+  }
+}
+
+function collectCardPayload(cardWrapper) {
+  if (!cardWrapper) return null;
+  const data = getCardData(cardWrapper);
+  // include card id and link for QR scanning if saved
+  const payload = {
+    cardId: data.cardId || '',
+    icsParNo: data.icsParNo || '',
+    propertyNo: data.propertyNo || '',
+    dateAcquired: data.dateAcquired || '',
+    acquisitionCost: data.acquisitionCost || '',
+    fund: data.fund || '',
+    endUserLocation: data.endUserLocation || '',
+    requestedBy: data.requestedBy || '',
+    supplier: data.supplier || '',
+    reference: data.reference || '',
+    itemDescription: data.itemDescription || ''
+  };
+  if (data.cardId) {
+    // Prefer an already-saved qrUrl (will be set when saved), otherwise build one
+    if (data.qrUrl) {
+      payload.url = data.qrUrl;
+    } else {
+      const publicBase = (typeof window !== 'undefined' && document.getElementById('public-base-url')) ? document.getElementById('public-base-url').value.trim() : '';
+      const baseToUse = publicBase || window.location.origin;
+      payload.url = `${baseToUse.replace(/\/$/, '')}/par.html?id=${encodeURIComponent(data.cardId)}`;
+    }
+  }
+  return payload;
+}
 
 function generateOptions(selectedColor) {
   let optionsHtml = '';
@@ -314,6 +442,7 @@ function createSingleCard(initColor, cardData = null) {
           <div class="form-row"><label>P.O/J.O/Contract Ref:</label><textarea class="underline-input auto-resize" rows="1"></textarea></div>
           <div class="form-row"><label>Item Description:</label><textarea class="underline-input auto-resize" rows="1"></textarea></div>
         </div>
+        <div class="qr-box" aria-label="Card QR code"></div>
       </div>
     </div>
   `;
@@ -322,6 +451,9 @@ function createSingleCard(initColor, cardData = null) {
   const newCard = lastPageGrid.lastElementChild;
   newCard.dataset.cardId = cardData && cardData.cardId ? cardData.cardId : `card-${currentIndex}`;
   allCards.push(newCard);
+
+  // Render QR code for the new card immediately
+  renderCardQRCode(newCard);
 
   // Card click toggles selection when selection-mode is active
   newCard.addEventListener('click', function(e) {
@@ -723,6 +855,7 @@ window.onload = async function() {
 
   // Keyboard navigation for inputs (Enter / Arrow keys)
   setupKeyboardNavigation();
+  loadPublicBaseUrl();
   refreshDashboardSummary();
 };
 
