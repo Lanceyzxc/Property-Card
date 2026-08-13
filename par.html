@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Acknowledgment Receipt</title>
+    <style>
+        /* General Setup */
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            color: #000;
+            background-color: #f4f4f4; /* Just for contrast outside the paper */
+            margin: 0;
+            padding: 20px;
+        }
+        .document-container {
+            width: 800px;
+            min-height: 1050px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 40px 50px;
+            box-sizing: border-box;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        /* Header Elements */
+        .appendix {
+            text-align: right;
+            font-style: italic;
+            font-size: 11px;
+            margin-bottom: 30px;
+            padding-right: 10px;
+        }
+        .title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            margin-bottom: 35px;
+        }
+        .info-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        .info-left {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .info-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            font-weight: bold;
+            padding-right: 100px; /* Aligns it offset from the right edge */
+        }
+
+        /* Table Structure */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000; /* Thick outer boundary */
+        }
+        th, td {
+            /* Thin horizontal lines, thick vertical lines */
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            border-left: 2px solid #000;
+            border-right: 2px solid #000;
+            padding: 2px 4px;
+            vertical-align: top;
+            height: 16px; /* Uniform row height for empty lines */
+        }
+
+        /* Table Headers */
+        th {
+            text-align: center;
+            vertical-align: middle;
+            font-weight: bold;
+            border-bottom: 2px solid #000; /* Thick line under headers */
+            padding: 10px 4px;
+            font-size: 11px;
+        }
+
+        /* Specific Column Formatting */
+        .col-qty { width: 8%; text-align: center; }
+        .col-unit { width: 7%; text-align: center; }
+        .col-desc { width: 44%; }
+        .col-prop { width: 17%; }
+        .col-date { width: 10%; }
+        .col-amount { width: 14%; text-align: right; padding-right: 5px;}
+
+        /* Signatories Box */
+        .footer-row td {
+            border-top: 2px solid #000; /* Thick separator for footer */
+            height: 160px;
+            padding: 10px 15px;
+            vertical-align: top;
+        }
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .sign-label {
+            margin-bottom: 25px;
+        }
+        .sign-details {
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .sign-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .sign-sub {
+            font-size: 11px;
+            margin-bottom: 25px;
+        }
+        .sign-date-pos {
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+        .sign-spacer {
+            flex-grow: 1;
+        }
+
+        /* Page Number */
+        .page-number {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="document-container">
+    <div class="appendix">Appendix 71</div>
+    
+    <div class="title">PROPERTY ACKNOWLEDGMENT RECEIPT</div>
+    
+    <div class="info-header">
+        <div class="info-left">
+            <div>Entity Name : <strong>CAMARINES NORTE STATE COLLEGE</strong></div>
+            <div>Fund Cluster : <strong id="val-fund"></strong></div>
+        </div>
+        <div class="info-right">
+            <div>PAR No. <strong id="val-parno"></strong></div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="col-qty">Quantity</th>
+                <th class="col-unit">Unit</th>
+                <th class="col-desc">Description</th>
+                <th class="col-prop">Property<br>Number</th>
+                <th class="col-date">Date<br>Acquired</th>
+                <th class="col-amount">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="col-qty" id="val-qty"></td>
+                <td class="col-unit" id="val-unit"></td>
+                <td class="col-desc" id="val-desc"></td>
+                <td class="col-prop" id="val-prop"></td>
+                <td class="col-date" id="val-date"></td>
+                <td class="col-amount" id="val-amount"></td>
+            </tr>
+            <tr>
+                <td></td><td></td><td class="col-desc">Serial Number:</td><td></td><td></td><td></td>
+            </tr>
+            <tr><td></td><td></td><td class="col-desc">1.)</td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td class="col-desc">2.)</td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td class="col-desc">3.)</td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td class="col-desc">4.)</td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td class="col-desc">5.)</td><td></td><td></td><td></td></tr>
+            <!-- Empty Rows for grid effect -->
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr>
+                <td></td><td></td>
+                <td class="col-desc">Note: Previously Issued to Maam Nora<br>Macasinag during her time as CBPA Dean</td>
+                <td></td><td></td><td></td>
+            </tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        </tbody>
+        <tfoot>
+            <tr class="footer-row">
+                <td colspan="3">
+                    <div class="footer-content">
+                        <div class="sign-label">Received by:</div>
+                        <div class="sign-details">
+                            <div class="sign-name" id="val-enduser">GEHANA D. LAMUG,DBA</div>
+                            <div class="sign-sub">Signatue over Printed Name of End User</div>
+                            <div class="sign-spacer"></div>
+                            <div class="sign-date-pos">11/3/2025</div>
+                            <div class="sign-date-pos">Position/Office</div>
+                            <div class="sign-spacer"></div>
+                            <div class="sign-date-pos">Date</div>
+                        </div>
+                    </div>
+                </td>
+                <td colspan="3">
+                    <div class="footer-content">
+                        <div class="sign-label">Issued by:</div>
+                        <div class="sign-details">
+                            <div class="sign-name">ARSENIO GEM A. GARCILLANOSA</div>
+                            <div class="sign-sub">Signatue over Printed Name of Supply and/or<br>Property Custodian</div>
+                            <div class="sign-spacer"></div>
+                            <div class="sign-date-pos">11/3/2025</div>
+                            <div class="sign-date-pos">Position/Office</div>
+                            <div class="sign-spacer"></div>
+                            <div class="sign-date-pos">Date</div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="page-number">173</div>
+</div>
+
+</body>
+</html>
+
+<!-- Firestore data binding for QR viewer -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+    // Firebase config (same as main app)
+    const firebaseConfig = {
+        apiKey: "AIzaSyBRLFZq8U2ZNrHeJ4hatv-Di-24AWGzE4s",
+        authDomain: "ucn-property-tag-cc45e.firebaseapp.com",
+        projectId: "ucn-property-tag-cc45e",
+        storageBucket: "ucn-property-tag-cc45e.firebasestorage.app",
+        messagingSenderId: "91020185928",
+        appId: "1:91020185928:web:14a3b495613b938a22637d",
+        measurementId: "G-NXK5BSZ6M9"
+    };
+
+    if (window.firebase && firebase.initializeApp) {
+        try { firebase.initializeApp(firebaseConfig); } catch (e) { /* already initialized */ }
+    }
+
+    const db = firebase.firestore ? firebase.firestore() : null;
+
+    function setText(id, value) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerText = value || '';
+    }
+
+    (function populateFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+        if (!id) return; // no id, nothing to show
+
+        if (!db) {
+            console.warn('Firestore not available');
+            return;
+        }
+
+        db.collection('propertyTags').doc(id).get()
+            .then(doc => {
+                if (!doc.exists) {
+                    console.warn('No document for id', id);
+                    return;
+                }
+                const data = doc.data();
+                // Map fields
+                setText('val-fund', data.fund || '');
+                setText('val-parno', data.icsParNo || id);
+                setText('val-qty', data.quantity || '1');
+                setText('val-unit', data.unit || 'pc');
+                setText('val-desc', data.itemDescription || '');
+                setText('val-prop', data.propertyNo || '');
+                setText('val-date', data.dateAcquired || '');
+                setText('val-amount', data.acquisitionCost || '');
+                setText('val-enduser', data.endUserLocation || data.requestedBy || '');
+            })
+            .catch(err => console.error('Failed to load document', err));
+    })();
+</script>
