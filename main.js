@@ -156,13 +156,10 @@ function saveCardToFirebase(cardWrapper) {
 
   const cardId = data.cardId || `card-${Math.random().toString(36).substring(2, 10)}`;
   data.cardId = cardId;
-  // Persist a short QR URL using either a provided public base URL or the current origin
+  // Persist a short QR URL using the current origin (auto-regenerated)
   try {
-    const publicBase = (typeof window !== 'undefined' && document.getElementById('public-base-url')) ? document.getElementById('public-base-url').value.trim() : '';
-    const baseToUse = publicBase || window.location.origin;
+    const baseToUse = window.location.origin;
     data.qrUrl = `${baseToUse.replace(/\/$/, '')}/par.html?id=${encodeURIComponent(cardId)}`;
-    // Save public base in localStorage for convenience
-    try { if (publicBase) localStorage.setItem('publicBaseUrl', publicBase); } catch (e) {}
   } catch (e) {
     data.qrUrl = '';
   }
@@ -179,50 +176,8 @@ function saveCardToFirebase(cardWrapper) {
     });
 }
 
-// Re-generate QR for every card in the UI and persist the current origin QR URL
-function regenerateAllQRCodes() {
-  if (!firebaseInitialized || !firebaseFirestore) {
-    showAlert('Firestore not initialized. Cannot regenerate QR.');
-    return;
-  }
-
-  if (!allCards || allCards.length === 0) {
-    showAlert('No cards found to regenerate.');
-    return;
-  }
-
-  showConfirm('Regenerate and save QR URLs for all visible cards?').then((ok) => {
-    if (!ok) return;
-    updateFirebaseStatus('Regenerating QR for all cards...', '#004aad');
-    const promises = allCards.map(card => {
-      try {
-        return new Promise((resolve) => {
-          saveCardToFirebase(card);
-          setTimeout(() => resolve(true), 200);
-        });
-      } catch (e) {
-        return Promise.resolve(false);
-      }
-    });
-
-    Promise.all(promises).then(() => {
-      updateFirebaseStatus('QR regeneration complete.', '#499632');
-      showAlert('QR regeneration finished. Reprint if necessary.');
-    }).catch(() => {
-      updateFirebaseStatus('Some QR regenerations failed.', '#9a0603');
-      showAlert('Some QR regenerations failed. Check console.');
-    });
-  });
-}
-
-// Load saved public base URL into the UI on startup
-function loadPublicBaseUrl() {
-  try {
-    const saved = localStorage.getItem('publicBaseUrl') || '';
-    const input = document.getElementById('public-base-url');
-    if (input) input.value = saved;
-  } catch (e) {}
-}
+// Regeneration button and optional public base URL were removed.
+// QR URLs are auto-generated from window.location.origin on save and render.
 
 function setupFirebaseAutoSave(cardWrapper) {
   if (!cardWrapper) return;
@@ -303,8 +258,7 @@ function collectCardPayload(cardWrapper) {
     if (data.qrUrl) {
       payload.url = data.qrUrl;
     } else {
-      const publicBase = (typeof window !== 'undefined' && document.getElementById('public-base-url')) ? document.getElementById('public-base-url').value.trim() : '';
-      const baseToUse = publicBase || window.location.origin;
+      const baseToUse = window.location.origin;
       payload.url = `${baseToUse.replace(/\/$/, '')}/par.html?id=${encodeURIComponent(data.cardId)}`;
     }
   }
@@ -855,7 +809,7 @@ window.onload = async function() {
 
   // Keyboard navigation for inputs (Enter / Arrow keys)
   setupKeyboardNavigation();
-  loadPublicBaseUrl();
+  // Public base URL feature removed; QR regeneration and saves use current origin.
   refreshDashboardSummary();
 };
 
