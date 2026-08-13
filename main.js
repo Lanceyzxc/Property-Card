@@ -986,10 +986,19 @@ function populateFromExcel(dataRows) {
     inputs[4].value = formatValue(getExcelValue(row, 'Fund'));
     
     // Line 6: End-User/Location
-    inputs[5].value = formatValue(getExcelValue(row, 'End-User/Location') || getExcelValue(row, 'End User') || getExcelValue(row, 'Location'));
+    inputs[5].value = formatValue(
+      getExcelValue(row, 'End-User/Location') ||
+      getExcelValue(row, 'End User') ||
+      getExcelValue(row, 'Location') ||
+      getExcelValue(row, 'Requested by')
+    );
     
     // Line 7: Requested by
-    inputs[6].value = formatValue(getExcelValue(row, 'Requested by'));
+    inputs[6].value = formatValue(
+      getExcelValue(row, 'Requested by') ||
+      getExcelValue(row, 'End User') ||
+      getExcelValue(row, 'End-User')
+    );
     
     // Line 8: Supplier
     inputs[7].value = formatValue(getExcelValue(row, 'Supplier'));
