@@ -92,14 +92,6 @@
         .col-prop { width: 17%; }
         .col-date { width: 10%; }
         .col-amount { width: 14%; text-align: right; padding-right: 5px;}
-        
-        /* ENHANCED: Multi-line description support for Excel imports */
-        #val-desc {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            height: auto;
-            line-height: 1.4;
-        }
 
         /* Signatories Box */
         .footer-row td {
@@ -275,18 +267,7 @@
     function setText(id, value) {
         const el = document.getElementById(id);
         if (!el) return;
-        
-        // ENHANCED: Preserve line breaks for description field from Excel
-        if (id === 'val-desc' && value && value.includes('\n')) {
-            // Convert newlines to <br> tags for proper display
-            const escapedValue = (value || '').replace(/&/g, '&amp;')
-                                              .replace(/</g, '&lt;')
-                                              .replace(/>/g, '&gt;');
-            const htmlValue = escapedValue.replace(/\n/g, '<br>');
-            el.innerHTML = htmlValue;
-        } else {
-            el.innerText = value || '';
-        }
+        el.innerText = value || '';
     }
 
     (function populateFromQuery() {
@@ -308,16 +289,15 @@
                 const data = doc.data();
                 // ENHANCED: Map ALL important fields from Excel headers via Firestore
                 // This ensures the PAR form receives complete data from Excel without blanks
-                setText('val-fund', data.fund || '');
-                setText('val-parno', data.icsParNo || id);
-                setText('val-qty', String(data.quantity || '1'));
-                setText('val-unit', String(data.unit || 'pc'));
-                const fullDescription = data.itemDescriptionFull || data.itemDescription || '';
-                setText('val-desc', fullDescription);
-                setText('val-prop', data.propertyNo || '');
-                setText('val-date', data.dateAcquired || '');
-                setText('val-amount', data.acquisitionCost || '');
-                setText('val-enduser', data.endUserLocation || data.requestedBy || '');
+                setText('val-fund', data.fund || '');                                    // Fund
+                setText('val-parno', data.icsParNo || id);                              // ICS/PAR No
+                setText('val-qty', String(data.quantity || '1'));                       // Quantity from Excel
+                setText('val-unit', String(data.unit || 'pc'));                         // Unit of Measurement from Excel
+                setText('val-desc', data.itemDescription || '');                        // Full Item Description
+                setText('val-prop', data.propertyNo || '');                             // Property Number
+                setText('val-date', data.dateAcquired || '');                           // Date Acquired
+                setText('val-amount', data.acquisitionCost || '');                      // Acquisition Cost/Amount
+                setText('val-enduser', data.endUserLocation || data.requestedBy || ''); // End User Location
             })
             .catch(err => console.error('Failed to load document', err));
     })();

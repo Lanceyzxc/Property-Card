@@ -128,11 +128,6 @@ function getCardData(cardWrapper) {
   const color = deptSelect ? deptSelect.value : departments[0].color;
   const inputs = cardWrapper.querySelectorAll('.underline-input');
 
-  const rawItemDescription = inputs[9] ? inputs[9].value.trim() : '';
-  const fullItemDescription = cardWrapper.dataset.itemDescriptionFull && cardWrapper.dataset.itemDescriptionFull.trim().length > 0
-    ? cardWrapper.dataset.itemDescriptionFull.trim()
-    : rawItemDescription;
-
   return {
     cardId,
     dept,
@@ -146,8 +141,7 @@ function getCardData(cardWrapper) {
     requestedBy: inputs[6] ? inputs[6].value.trim() : '',
     supplier: inputs[7] ? inputs[7].value.trim() : '',
     reference: inputs[8] ? inputs[8].value.trim() : '',
-    itemDescription: rawItemDescription,
-    itemDescriptionFull: fullItemDescription,
+    itemDescription: inputs[9] ? inputs[9].value.trim() : '',
     quantity: cardWrapper.dataset.quantity || '1',
     unit: cardWrapper.dataset.unit || 'pc',
     savedAt: new Date().toISOString()
@@ -195,9 +189,6 @@ function setupFirebaseAutoSave(cardWrapper) {
 
   inputs.forEach(input => {
     input.addEventListener('input', () => {
-      if (input.tagName === 'TEXTAREA') {
-        cardWrapper.dataset.itemDescriptionFull = input.value || '';
-      }
       saveOnChange();
       if (input.tagName === 'TEXTAREA') {
         // Regenerate QR on text change so print preview stays current
@@ -205,9 +196,6 @@ function setupFirebaseAutoSave(cardWrapper) {
       }
     });
     input.addEventListener('change', () => {
-      if (input.tagName === 'TEXTAREA') {
-        cardWrapper.dataset.itemDescriptionFull = input.value || '';
-      }
       saveOnChange();
       renderCardQRCode(cardWrapper);
     });
@@ -266,7 +254,6 @@ function collectCardPayload(cardWrapper) {
     supplier: data.supplier || '',
     reference: data.reference || '',
     itemDescription: data.itemDescription || '',
-    itemDescriptionFull: data.itemDescriptionFull || data.itemDescription || '',
     quantity: data.quantity || '1',
     unit: data.unit || 'pc'
   };
@@ -458,11 +445,7 @@ function createSingleCard(initColor, cardData = null) {
     if (inputs[6]) inputs[6].value = cardData.requestedBy || '';
     if (inputs[7]) inputs[7].value = cardData.supplier || '';
     if (inputs[8]) inputs[8].value = cardData.reference || '';
-    if (inputs[9]) {
-      const itemDescriptionValue = cardData.itemDescription || '';
-      inputs[9].value = itemDescriptionValue;
-      newCard.dataset.itemDescriptionFull = itemDescriptionValue;
-    }
+    if (inputs[9]) inputs[9].value = cardData.itemDescription || '';
     
     // ENHANCED: Restore quantity and unit from saved card data (for PAR form)
     if (cardData.quantity) newCard.dataset.quantity = cardData.quantity;
@@ -475,11 +458,6 @@ function createSingleCard(initColor, cardData = null) {
   textareas.forEach((ta) => {
     // helper to enforce max two visual rows by trimming overflowing content
     const adjust = (el) => {
-      const fullValue = (el.value || '').trim();
-      if (el.tagName === 'TEXTAREA') {
-        newCard.dataset.itemDescriptionFull = fullValue;
-      }
-
       el.style.height = 'auto';
       const cs = window.getComputedStyle(el);
       const fontSize = parseFloat(cs.fontSize) || 18;
@@ -487,7 +465,7 @@ function createSingleCard(initColor, cardData = null) {
       const padding = parseFloat(cs.paddingTop || 0) + parseFloat(cs.paddingBottom || 0) + 4;
       const maxH = (lineHeight * 2) + padding;
 
-      // keep card display compact; full description stays in dataset for PAR output
+      // shrink visually to fit within two lines
       let desired = Math.min(el.scrollHeight, maxH);
       el.style.height = desired + 'px';
       el.style.overflowY = 'hidden';
@@ -495,19 +473,24 @@ function createSingleCard(initColor, cardData = null) {
       // If content still overflows (wrapped long single line or many words), trim by words
       if (el.scrollHeight > maxH) {
         let text = el.value || '';
+        // Remove trailing whitespace first
         text = text.replace(/\s+$/,'');
+        // Iteratively remove last words until it fits or empty
         while (text.length > 0) {
+          // Remove last word or character group
           text = text.replace(/\s*\S+$/,'');
           el.value = text.trim();
           el.style.height = 'auto';
           if (el.scrollHeight <= maxH) break;
         }
+        // Append ellipsis if something was trimmed
         if (text.length > 0 && (text !== (el.value || ''))) {
           el.value = (el.value || '').trim() + '\u2026';
         }
         el.style.height = Math.min(el.scrollHeight, maxH) + 'px';
       }
 
+      // Reduce font slightly when content wraps to second line for better fit
       if (el.scrollHeight > lineHeight + padding) {
         el.style.fontSize = Math.max(14, fontSize - 2) + 'px';
       } else {
@@ -1032,9 +1015,7 @@ function populateFromExcel(dataRows) {
     inputs[8].value = formatValue(getExcelValue(row, 'P.O/J.O/Contract Ref') || getExcelValue(row, 'PO/J.O/Contract Ref') || getExcelValue(row, 'Reference'));
     
     // Line 10: Item Description
-    const fullItemDescription = formatValue(getExcelValue(row, 'Item Description') || getExcelValue(row, 'Items Description'));
-    inputs[9].value = fullItemDescription;
-    newCard.dataset.itemDescriptionFull = fullItemDescription;
+    inputs[9].value = formatValue(getExcelValue(row, 'Item Description') || getExcelValue(row, 'Items Description'));
     
     // If this is a textarea with auto-resize, trigger its adjust (if attached)
     if (inputs[9] && inputs[9].tagName === 'TEXTAREA') {
