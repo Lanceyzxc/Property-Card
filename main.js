@@ -127,11 +127,17 @@ function getCardData(cardWrapper) {
   const dept = deptSelect ? deptSelect.options[deptSelect.selectedIndex]?.text.trim() : '';
   const color = deptSelect ? deptSelect.value : departments[0].color;
   const inputs = cardWrapper.querySelectorAll('.underline-input');
+  const quantity = cardWrapper.dataset.quantity || '';
+  const unit = cardWrapper.dataset.unit || '';
+  const fullItemDescription = cardWrapper.dataset.itemDescriptionRaw || '';
+  const fullReference = cardWrapper.dataset.referenceRaw || '';
 
   return {
     cardId,
     dept,
     color,
+    quantity: quantity || '1',
+    unit: unit || 'pc',
     icsParNo: inputs[0] ? inputs[0].value.trim() : '',
     propertyNo: inputs[1] ? inputs[1].value.trim() : '',
     dateAcquired: inputs[2] ? inputs[2].value.trim() : '',
@@ -140,8 +146,8 @@ function getCardData(cardWrapper) {
     endUserLocation: inputs[5] ? inputs[5].value.trim() : '',
     requestedBy: inputs[6] ? inputs[6].value.trim() : '',
     supplier: inputs[7] ? inputs[7].value.trim() : '',
-    reference: inputs[8] ? inputs[8].value.trim() : '',
-    itemDescription: inputs[9] ? inputs[9].value.trim() : '',
+    reference: fullReference || (inputs[8] ? inputs[8].value.trim() : ''),
+    itemDescription: fullItemDescription || (inputs[9] ? inputs[9].value.trim() : ''),
     savedAt: new Date().toISOString()
   };
 }
@@ -187,6 +193,9 @@ function setupFirebaseAutoSave(cardWrapper) {
 
   inputs.forEach(input => {
     input.addEventListener('input', () => {
+      if (input.classList.contains('auto-resize')) {
+        cardWrapper.dataset.itemDescriptionRaw = input.value;
+      }
       saveOnChange();
       if (input.tagName === 'TEXTAREA') {
         // Regenerate QR on text change so print preview stays current
@@ -194,6 +203,9 @@ function setupFirebaseAutoSave(cardWrapper) {
       }
     });
     input.addEventListener('change', () => {
+      if (input.classList.contains('auto-resize')) {
+        cardWrapper.dataset.itemDescriptionRaw = input.value;
+      }
       saveOnChange();
       renderCardQRCode(cardWrapper);
     });
@@ -462,25 +474,9 @@ function createSingleCard(initColor, cardData = null) {
       el.style.height = desired + 'px';
       el.style.overflowY = 'hidden';
 
-      // If content still overflows (wrapped long single line or many words), trim by words
-      if (el.scrollHeight > maxH) {
-        let text = el.value || '';
-        // Remove trailing whitespace first
-        text = text.replace(/\s+$/,'');
-        // Iteratively remove last words until it fits or empty
-        while (text.length > 0) {
-          // Remove last word or character group
-          text = text.replace(/\s*\S+$/,'');
-          el.value = text.trim();
-          el.style.height = 'auto';
-          if (el.scrollHeight <= maxH) break;
-        }
-        // Append ellipsis if something was trimmed
-        if (text.length > 0 && (text !== (el.value || ''))) {
-          el.value = (el.value || '').trim() + '\u2026';
-        }
-        el.style.height = Math.min(el.scrollHeight, maxH) + 'px';
-      }
+      // Preserve the full value for PAR/QR generation. Only constrain the visible textarea box,
+      // not the actual stored description text.
+      el.style.height = Math.min(el.scrollHeight, maxH) + 'px';
 
       // Reduce font slightly when content wraps to second line for better fit
       if (el.scrollHeight > lineHeight + padding) {
@@ -909,6 +905,27 @@ function formatValue(val) {
   return str;
 }
 
+function getPreferredExcelValue(row, candidates, fallback = '') {
+  for (const label of candidates) {
+    const value = formatValue(getExcelValue(row, label));
+    if (value && value !== 'N/A') return value;
+  }
+  return formatValue(fallback || getExcelValue(row, 'Description')) || '';
+}
+
+function getExcelQuantity(row) {
+  const value = getPreferredExcelValue(row, ['Quantity', 'Qty', 'Qty.', 'No. of Units']);
+  if (!value) return '1';
+  const match = value.match(/\d+(?:\.\d+)?/);
+  return match ? match[0] : value;
+}
+
+function getExcelUnit(row) {
+  const value = getPreferredExcelValue(row, ['Unit', 'Unit of Measure', 'UOM']);
+  if (!value) return 'pc';
+  return value;
+}
+
 function populateFromExcel(dataRows) {
   let generatedCount = 0;
 
@@ -944,6 +961,46 @@ function populateFromExcel(dataRows) {
     const cards = document.querySelectorAll('.card-ui-wrapper');
     const newCard = cards[cards.length - 1];
     const inputs = newCard.querySelectorAll('.underline-input');
+
+    const qtyFromRow = getExcelQuantity(row);
+    const unitFromRow = getExcelUnit(row);
+    const descriptionFromRow = getPreferredExcelValue(row, [
+      'Item Description',
+      'Items Description',
+      'Description',
+      'Description of Item',
+      'Article',
+      'Item Name',
+      'Property Description'
+    ]);
+    const referenceFromRow = getPreferredExcelValue(row, [
+      'P.O/J.O/Contract Ref',
+      'PO/J.O/Contract Ref',
+      'Reference',
+      'Reference No.',
+      'Contract Reference'
+    ]);
+    const propertyNoFromRow = getPreferredExcelValue(row, ['Property No.', 'Property No./Item No.', 'Item No.', 'Asset No.']);
+    const dateFromRow = getPreferredExcelValue(row, ['Date Acquired', 'Date Delivered', 'Date of Acquisition', 'Acquired Date']);
+    const fundFromRow = getPreferredExcelValue(row, ['Fund', 'Fund Cluster']);
+    const endUserFromRow = getPreferredExcelValue(row, ['End-User/Location', 'End User', 'End-User', 'Location', 'User/Location']);
+    const requestedByFromRow = getPreferredExcelValue(row, ['Requested by', 'Requested By', 'Requestor', 'End User', 'End-User']);
+    const supplierFromRow = getPreferredExcelValue(row, ['Supplier', 'Supplier Name', 'Vendor']);
+    const acquisitionCostFromRow = getPreferredExcelValue(row, ['Acquisition Cost', 'Unit Cost', 'Cost', 'Amount', 'Total Cost']);
+
+    newCard.dataset.quantity = qtyFromRow;
+    newCard.dataset.unit = unitFromRow;
+    newCard.dataset.itemDescription = descriptionFromRow;
+    newCard.dataset.itemDescriptionRaw = descriptionFromRow;
+    newCard.dataset.reference = referenceFromRow;
+    newCard.dataset.referenceRaw = referenceFromRow;
+    newCard.dataset.propertyNo = propertyNoFromRow;
+    newCard.dataset.dateAcquired = dateFromRow;
+    newCard.dataset.fund = fundFromRow;
+    newCard.dataset.endUserLocation = endUserFromRow;
+    newCard.dataset.requestedBy = requestedByFromRow;
+    newCard.dataset.supplier = supplierFromRow;
+    newCard.dataset.acquisitionCost = acquisitionCostFromRow;
     
     // 4. Map the EXACT Excel cell data gamit ang bago nating Smart Reader (getExcelValue) at formatValue
     
@@ -962,15 +1019,13 @@ function populateFromExcel(dataRows) {
     inputs[0].value = icsParVal;
     
     // Line 2: Property No.
-    inputs[1].value = formatValue(getExcelValue(row, 'Property No.') || getExcelValue(row, 'Property No./Item No.') || getExcelValue(row, 'Item No.'));
+    inputs[1].value = propertyNoFromRow;
     
     // Line 3: Date Acquired
-    inputs[2].value = formatValue(getExcelValue(row, 'Date Acquired') || getExcelValue(row, 'Date Delivered'));
+    inputs[2].value = dateFromRow;
     
     // Line 4: Acquisition Cost
-    let cost = getExcelValue(row, 'Acquisition Cost') || getExcelValue(row, 'Unit Cost') || getExcelValue(row, 'Cost');
-    let costStr = cost !== undefined && cost !== null ? cost.toString().trim() : '';
-    
+    let costStr = formatValue(acquisitionCostFromRow);
     if (costStr.toLowerCase() === 'n/a') {
         inputs[3].value = 'N/A';
     } else {
@@ -978,36 +1033,27 @@ function populateFromExcel(dataRows) {
         if(!isNaN(cleanCost) && cleanCost !== "") {
             inputs[3].value = Number(cleanCost).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
         } else {
-            inputs[3].value = formatValue(cost);
+            inputs[3].value = costStr;
         }
     }
     
     // Line 5: Fund
-    inputs[4].value = formatValue(getExcelValue(row, 'Fund'));
+    inputs[4].value = fundFromRow;
     
     // Line 6: End-User/Location
-    inputs[5].value = formatValue(
-      getExcelValue(row, 'End-User/Location') ||
-      getExcelValue(row, 'End User') ||
-      getExcelValue(row, 'Location') ||
-      getExcelValue(row, 'Requested by')
-    );
+    inputs[5].value = endUserFromRow;
     
     // Line 7: Requested by
-    inputs[6].value = formatValue(
-      getExcelValue(row, 'Requested by') ||
-      getExcelValue(row, 'End User') ||
-      getExcelValue(row, 'End-User')
-    );
+    inputs[6].value = requestedByFromRow;
     
     // Line 8: Supplier
-    inputs[7].value = formatValue(getExcelValue(row, 'Supplier'));
+    inputs[7].value = supplierFromRow;
     
     // Line 9: Reference
-    inputs[8].value = formatValue(getExcelValue(row, 'P.O/J.O/Contract Ref') || getExcelValue(row, 'PO/J.O/Contract Ref') || getExcelValue(row, 'Reference'));
+    inputs[8].value = referenceFromRow;
     
     // Line 10: Item Description
-    inputs[9].value = formatValue(getExcelValue(row, 'Item Description') || getExcelValue(row, 'Items Description'));
+    inputs[9].value = descriptionFromRow;
     
     // If this is a textarea with auto-resize, trigger its adjust (if attached)
     if (inputs[9] && inputs[9].tagName === 'TEXTAREA') {
