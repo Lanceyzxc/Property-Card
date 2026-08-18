@@ -146,7 +146,8 @@ function getCardData(cardWrapper) {
     requestedBy: inputs[6] ? inputs[6].value.trim() : '',
     supplier: inputs[7] ? inputs[7].value.trim() : '',
     reference: inputs[8] ? inputs[8].value.trim() : '',
-    itemDescription: fullItemDescription,
+    itemDescription: rawItemDescription,
+    itemDescriptionFull: fullItemDescription,
     quantity: cardWrapper.dataset.quantity || '1',
     unit: cardWrapper.dataset.unit || 'pc',
     savedAt: new Date().toISOString()
@@ -265,6 +266,7 @@ function collectCardPayload(cardWrapper) {
     supplier: data.supplier || '',
     reference: data.reference || '',
     itemDescription: data.itemDescription || '',
+    itemDescriptionFull: data.itemDescriptionFull || data.itemDescription || '',
     quantity: data.quantity || '1',
     unit: data.unit || 'pc'
   };

@@ -312,7 +312,8 @@
                 setText('val-parno', data.icsParNo || id);
                 setText('val-qty', String(data.quantity || '1'));
                 setText('val-unit', String(data.unit || 'pc'));
-                setText('val-desc', data.itemDescription || data.itemDescriptionFull || '');
+                const fullDescription = data.itemDescriptionFull || data.itemDescription || '';
+                setText('val-desc', fullDescription);
                 setText('val-prop', data.propertyNo || '');
                 setText('val-date', data.dateAcquired || '');
                 setText('val-amount', data.acquisitionCost || '');
