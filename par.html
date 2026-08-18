@@ -175,14 +175,6 @@
                 <td class="col-date" id="val-date"></td>
                 <td class="col-amount" id="val-amount"></td>
             </tr>
-            <tr>
-                <td></td><td></td><td class="col-desc">Serial Number:</td><td></td><td></td><td></td>
-            </tr>
-            <tr><td></td><td></td><td class="col-desc">1.)</td><td></td><td></td><td></td></tr>
-            <tr><td></td><td></td><td class="col-desc">2.)</td><td></td><td></td><td></td></tr>
-            <tr><td></td><td></td><td class="col-desc">3.)</td><td></td><td></td><td></td></tr>
-            <tr><td></td><td></td><td class="col-desc">4.)</td><td></td><td></td><td></td></tr>
-            <tr><td></td><td></td><td class="col-desc">5.)</td><td></td><td></td><td></td></tr>
             <!-- Empty Rows for grid effect -->
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
@@ -192,7 +184,7 @@
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr>
                 <td></td><td></td>
-                <td class="col-desc">Note: Previously Issued to Maam Nora<br>Macasinag during her time as CBPA Dean</td>
+                <td class="col-desc">Supplier: <span id="val-note"></span></td>
                 <td></td><td></td><td></td>
             </tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
@@ -209,10 +201,10 @@
                     <div class="footer-content">
                         <div class="sign-label">Received by:</div>
                         <div class="sign-details">
-                            <div class="sign-name" id="val-enduser">GEHANA D. LAMUG,DBA</div>
+                            <div class="sign-name" id="val-enduser"></div>
                             <div class="sign-sub">Signatue over Printed Name of End User</div>
                             <div class="sign-spacer"></div>
-                            <div class="sign-date-pos">11/3/2025</div>
+                            <div class="sign-date-pos"></div>
                             <div class="sign-date-pos">Position/Office</div>
                             <div class="sign-spacer"></div>
                             <div class="sign-date-pos">Date</div>
@@ -223,10 +215,10 @@
                     <div class="footer-content">
                         <div class="sign-label">Issued by:</div>
                         <div class="sign-details">
-                            <div class="sign-name">ARSENIO GEM A. GARCILLANOSA</div>
+                            <div class="sign-name" id="val-custodian"></div>
                             <div class="sign-sub">Signatue over Printed Name of Supply and/or<br>Property Custodian</div>
                             <div class="sign-spacer"></div>
-                            <div class="sign-date-pos">11/3/2025</div>
+                            <div class="sign-date-pos"></div>
                             <div class="sign-date-pos">Position/Office</div>
                             <div class="sign-spacer"></div>
                             <div class="sign-date-pos">Date</div>
@@ -237,7 +229,7 @@
         </tfoot>
     </table>
 
-    <div class="page-number">173</div>
+    <div class="page-number" id="val-page-number"></div>
 </div>
 
 </body>
@@ -296,7 +288,10 @@
                 setText('val-prop', data.propertyNo || '');
                 setText('val-date', data.dateAcquired || '');
                 setText('val-amount', data.acquisitionCost || '');
+                setText('val-note', data.supplier || '');
                 setText('val-enduser', data.endUserLocation || data.requestedBy || '');
+                setText('val-custodian', '');
+                setText('val-page-number', '');
             })
             .catch(err => console.error('Failed to load document', err));
     })();
