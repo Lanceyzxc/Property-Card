@@ -200,7 +200,7 @@
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr>
                 <td></td><td></td>
-                <td class="col-desc" id="val-note"></td>
+                <td class="col-desc">Note: Previously Issued to Maam Nora<br>Macasinag during her time as CBPA Dean</td>
                 <td></td><td></td><td></td>
             </tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
@@ -275,18 +275,17 @@
     function setText(id, value) {
         const el = document.getElementById(id);
         if (!el) return;
-
-        const textValue = value || '';
-
-        // Preserve line breaks for multiline fields coming from Excel
-        if ((id === 'val-desc' || id === 'val-note') && textValue.includes('\n')) {
-            const escapedValue = textValue.replace(/&/g, '&amp;')
-                                         .replace(/</g, '&lt;')
-                                         .replace(/>/g, '&gt;');
+        
+        // ENHANCED: Preserve line breaks for description field from Excel
+        if (id === 'val-desc' && value && value.includes('\n')) {
+            // Convert newlines to <br> tags for proper display
+            const escapedValue = (value || '').replace(/&/g, '&amp;')
+                                              .replace(/</g, '&lt;')
+                                              .replace(/>/g, '&gt;');
             const htmlValue = escapedValue.replace(/\n/g, '<br>');
             el.innerHTML = htmlValue;
         } else {
-            el.innerText = textValue;
+            el.innerText = value || '';
         }
     }
 
@@ -317,7 +316,6 @@
                 setText('val-prop', data.propertyNo || '');                             // Property Number
                 setText('val-date', data.dateAcquired || '');                           // Date Acquired
                 setText('val-amount', data.acquisitionCost || '');                      // Acquisition Cost/Amount
-                setText('val-note', data.supplier ? `Note: ${data.supplier}` : '');     // Supplier goes to note section
                 setText('val-enduser', data.endUserLocation || data.requestedBy || ''); // End User Location
             })
             .catch(err => console.error('Failed to load document', err));

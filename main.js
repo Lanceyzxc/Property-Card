@@ -465,7 +465,20 @@ function createSingleCard(initColor, cardData = null) {
       const padding = parseFloat(cs.paddingTop || 0) + parseFloat(cs.paddingBottom || 0) + 4;
       const maxH = (lineHeight * 2) + padding;
 
-      // shrink visually to fit within two lines
+      // ENHANCED: Preserve multi-line content from Excel imports (do not trim)
+      const currentText = el.value || '';
+      const hasActualLineBreaks = currentText.includes('\n');
+      
+      if (hasActualLineBreaks) {
+        // For multi-line content (from Excel), preserve all content and allow scrolling
+        el.style.height = 'auto';
+        el.style.overflowY = 'auto';
+        el.style.height = Math.max(el.scrollHeight, lineHeight + padding) + 'px';
+        el.style.fontSize = fontSize + 'px';
+        return; // Don't apply trimming logic for multi-line imports
+      }
+
+      // shrink visually to fit within two lines (for single-line user input)
       let desired = Math.min(el.scrollHeight, maxH);
       el.style.height = desired + 'px';
       el.style.overflowY = 'hidden';
