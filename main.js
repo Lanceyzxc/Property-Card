@@ -886,18 +886,40 @@ function processExcel() {
   reader.readAsArrayBuffer(file);
 }
 
-// BAGO: Smart function para hanapin ang header kahit may extra spaces o line break sa Excel
+// Smart header matching for Excel exports with inconsistent spacing, punctuation, and aliases.
+function normalizeHeaderName(value) {
+  if (value === undefined || value === null) return '';
+  return String(value)
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[\s\r\n\-_./()]+/g, '')
+    .trim();
+}
+
 function getExcelValue(row, targetHeader) {
-  // Tatanggalin natin ang lahat ng spaces at line breaks, tapos gagawing small letters
-  const target = targetHeader.toLowerCase().replace(/[\s\r\n]+/g, '');
-  
+  const target = normalizeHeaderName(targetHeader);
+  if (!target) return '';
+
   for (let key in row) {
-    const currentKey = key.toLowerCase().replace(/[\s\r\n]+/g, '');
-    // Kung nag-match na sila kahit walang spaces, kunin ang value
-    if (currentKey === target) {
+    const currentKey = normalizeHeaderName(key);
+    if (!currentKey) continue;
+    if (currentKey === target || currentKey.includes(target) || target.includes(currentKey)) {
       return row[key];
     }
   }
+  return '';
+}
+
+function getPreferredExcelValue(row, aliases) {
+  const candidates = Array.isArray(aliases) ? aliases : [aliases];
+
+  for (const alias of candidates) {
+    const value = getExcelValue(row, alias);
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      return value;
+    }
+  }
+
   return '';
 }
 
@@ -913,7 +935,12 @@ function populateFromExcel(dataRows) {
   let generatedCount = 0;
 
   dataRows.forEach(row => {
-    const classification = formatValue(getExcelValue(row, 'Inventory/Property Classification'));
+    const classification = formatValue(getPreferredExcelValue(row, [
+      'Inventory/Property Classification',
+      'Inventory Property Classification',
+      'Property Classification',
+      'Classification'
+    ]));
     const normalizedClassification = classification.toLowerCase().replace(/[\s\u00A0]+/g, ' ').trim();
     const shouldGenerate = normalizedClassification.includes('semi') || normalizedClassification.includes('non');
 
@@ -945,70 +972,128 @@ function populateFromExcel(dataRows) {
     const newCard = cards[cards.length - 1];
     const inputs = newCard.querySelectorAll('.underline-input');
     
-    // 4. Map the EXACT Excel cell data gamit ang bago nating Smart Reader (getExcelValue) at formatValue
-    
-    // Line 1: ICS/PAR No.
-    let ics = formatValue(getExcelValue(row, 'ICS No. (If Applicable)') || getExcelValue(row, 'ICS/PAR No.') || getExcelValue(row, 'ICS No.'));
-    let par = formatValue(getExcelValue(row, 'PAR No.(If Applicable)') || getExcelValue(row, 'PAR No.') || getExcelValue(row, 'PAR No'));
+    // 4. Map the Excel column values to PAR fields using a broader alias list,
+    // so the import matches the actual exported header names rather than only a small fixed set.
+    const ics = formatValue(getPreferredExcelValue(row, [
+      'ICS No. (If Applicable)',
+      'ICS/PAR No.',
+      'ICS No.',
+      'ICS Number',
+      'ICS',
+      'PAR No. (If Applicable)',
+      'PAR No.',
+      'PAR Number'
+    ]));
+    const par = formatValue(getPreferredExcelValue(row, [
+      'PAR No.(If Applicable)',
+      'PAR No. (If Applicable)',
+      'PAR No.',
+      'PAR Number',
+      'PAR'
+    ]));
+
     let icsParVal = '';
-    
     if (ics && ics !== 'N/A') {
-        icsParVal = ics;
+      icsParVal = ics;
     } else if (par && par !== 'N/A') {
-        icsParVal = par;
+      icsParVal = par;
     } else if (ics === 'N/A' || par === 'N/A') {
-        icsParVal = 'N/A';
+      icsParVal = 'N/A';
     }
     inputs[0].value = icsParVal;
-    
-    // Line 2: Property No.
-    inputs[1].value = formatValue(getExcelValue(row, 'Property No.') || getExcelValue(row, 'Property No./Item No.') || getExcelValue(row, 'Item No.'));
-    
-    // Line 3: Date Acquired
-    inputs[2].value = formatValue(getExcelValue(row, 'Date Acquired') || getExcelValue(row, 'Date Delivered'));
-    
-    // Line 4: Acquisition Cost
-    let cost = getExcelValue(row, 'Acquisition Cost') || getExcelValue(row, 'Unit Cost') || getExcelValue(row, 'Cost');
+
+    inputs[1].value = formatValue(getPreferredExcelValue(row, [
+      'Property No.',
+      'Property No./Item No.',
+      'Property Number',
+      'Property Number/Item No',
+      'Item No.',
+      'Item Number',
+      'Property ID'
+    ]));
+
+    inputs[2].value = formatValue(getPreferredExcelValue(row, [
+      'Date Acquired',
+      'Date Delivered',
+      'Date Received',
+      'Date of Acquisition'
+    ]));
+
+    const cost = getPreferredExcelValue(row, [
+      'Acquisition Cost',
+      'Unit Cost',
+      'Cost',
+      'Amount',
+      'Total Cost',
+      'Total Amount'
+    ]);
     let costStr = cost !== undefined && cost !== null ? cost.toString().trim() : '';
-    
+
     if (costStr.toLowerCase() === 'n/a') {
-        inputs[3].value = 'N/A';
+      inputs[3].value = 'N/A';
     } else {
-        let cleanCost = costStr.replace(/[^0-9.-]+/g, ''); 
-        if(!isNaN(cleanCost) && cleanCost !== "") {
-            inputs[3].value = Number(cleanCost).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
-        } else {
-            inputs[3].value = formatValue(cost);
-        }
+      let cleanCost = costStr.replace(/[^0-9.-]+/g, '');
+      if (!isNaN(cleanCost) && cleanCost !== '') {
+        inputs[3].value = Number(cleanCost).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+      } else {
+        inputs[3].value = formatValue(cost);
+      }
     }
-    
-    // Line 5: Fund
-    inputs[4].value = formatValue(getExcelValue(row, 'Fund'));
-    
-    // Line 6: End-User/Location
-    inputs[5].value = formatValue(
-      getExcelValue(row, 'End-User/Location') ||
-      getExcelValue(row, 'End User') ||
-      getExcelValue(row, 'Location') ||
-      getExcelValue(row, 'Requested by')
-    );
-    
-    // Line 7: Requested by
-    inputs[6].value = formatValue(
-      getExcelValue(row, 'Requested by') ||
-      getExcelValue(row, 'End User') ||
-      getExcelValue(row, 'End-User')
-    );
-    
-    // Line 8: Supplier
-    inputs[7].value = formatValue(getExcelValue(row, 'Supplier'));
-    
-    // Line 9: Reference
-    inputs[8].value = formatValue(getExcelValue(row, 'P.O/J.O/Contract Ref') || getExcelValue(row, 'PO/J.O/Contract Ref') || getExcelValue(row, 'Reference'));
-    
-    // Line 10: Item Description
-    inputs[9].value = formatValue(getExcelValue(row, 'Item Description') || getExcelValue(row, 'Items Description'));
-    
+
+    inputs[4].value = formatValue(getPreferredExcelValue(row, [
+      'Fund',
+      'Fund Cluster',
+      'Fund Cluster Code'
+    ]));
+
+    inputs[5].value = formatValue(getPreferredExcelValue(row, [
+      'End-User/Location',
+      'End User/Location',
+      'End User',
+      'End-User',
+      'Location',
+      'Office/Location',
+      'Requested by'
+    ]));
+
+    inputs[6].value = formatValue(getPreferredExcelValue(row, [
+      'Requested by',
+      'Requested By',
+      'Requesting Office',
+      'End User',
+      'End-User',
+      'Assigned To'
+    ]));
+
+    inputs[7].value = formatValue(getPreferredExcelValue(row, [
+      'Supplier',
+      'Supplier Name',
+      'Supplier/Company',
+      'Vendor',
+      'Company'
+    ]));
+
+    inputs[8].value = formatValue(getPreferredExcelValue(row, [
+      'P.O/J.O/Contract Ref',
+      'PO/J.O/Contract Ref',
+      'P.O./J.O./Contract Ref',
+      'PO/JO/Contract Ref',
+      'Contract Ref',
+      'Reference',
+      'Ref No.',
+      'Reference No.'
+    ]));
+
+    inputs[9].value = formatValue(getPreferredExcelValue(row, [
+      'Item Description',
+      'Items Description',
+      'Description',
+      'Full Description',
+      'Property Description',
+      'Article Description',
+      'Item/Description'
+    ]));
+
     // If this is a textarea with auto-resize, trigger its adjust (if attached)
     if (inputs[9] && inputs[9].tagName === 'TEXTAREA') {
       const ev = new Event('input', { bubbles: true });
