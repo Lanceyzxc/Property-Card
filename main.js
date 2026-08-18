@@ -142,6 +142,8 @@ function getCardData(cardWrapper) {
     supplier: inputs[7] ? inputs[7].value.trim() : '',
     reference: inputs[8] ? inputs[8].value.trim() : '',
     itemDescription: inputs[9] ? inputs[9].value.trim() : '',
+    quantity: cardWrapper.dataset.quantity || '1',
+    unit: cardWrapper.dataset.unit || 'pc',
     savedAt: new Date().toISOString()
   };
 }
@@ -251,7 +253,9 @@ function collectCardPayload(cardWrapper) {
     requestedBy: data.requestedBy || '',
     supplier: data.supplier || '',
     reference: data.reference || '',
-    itemDescription: data.itemDescription || ''
+    itemDescription: data.itemDescription || '',
+    quantity: data.quantity || '1',
+    unit: data.unit || 'pc'
   };
   if (data.cardId) {
     // Prefer an already-saved qrUrl (will be set when saved), otherwise build one
@@ -442,6 +446,10 @@ function createSingleCard(initColor, cardData = null) {
     if (inputs[7]) inputs[7].value = cardData.supplier || '';
     if (inputs[8]) inputs[8].value = cardData.reference || '';
     if (inputs[9]) inputs[9].value = cardData.itemDescription || '';
+    
+    // ENHANCED: Restore quantity and unit from saved card data (for PAR form)
+    if (cardData.quantity) newCard.dataset.quantity = cardData.quantity;
+    if (cardData.unit) newCard.dataset.unit = cardData.unit;
   }
 
   setupFirebaseAutoSave(newCard);
@@ -1014,6 +1022,19 @@ function populateFromExcel(dataRows) {
       const ev = new Event('input', { bubbles: true });
       inputs[9].dispatchEvent(ev);
     }
+
+    // ENHANCED: Read Quantity and Unit from Excel (stored invisibly for PAR form)
+    let quantity = formatValue(getExcelValue(row, 'Quantity') || getExcelValue(row, 'Qty'));
+    if (!quantity || quantity === 'N/A') {
+      quantity = '1';
+    }
+    newCard.dataset.quantity = quantity;
+    
+    let unit = formatValue(getExcelValue(row, 'Unit') || getExcelValue(row, 'Unit of Measurement') || getExcelValue(row, 'UOM'));
+    if (!unit || unit === 'N/A') {
+      unit = 'pc';
+    }
+    newCard.dataset.unit = unit;
 
     // Auto-save the imported card immediately after fields are populated
     saveCardToFirebase(newCard);
