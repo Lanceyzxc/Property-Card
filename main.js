@@ -27,13 +27,13 @@ let firebaseFirestore = null;
 let firebaseInitialized = false;
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBRLFZq8U2ZNrHeJ4hatv-Di-24AWGzE4s",
-  authDomain: "ucn-property-tag-cc45e.firebaseapp.com",
-  projectId: "ucn-property-tag-cc45e",
-  storageBucket: "ucn-property-tag-cc45e.firebasestorage.app",
-  messagingSenderId: "91020185928",
-  appId: "1:91020185928:web:14a3b495613b938a22637d",
-  measurementId: "G-NXK5BSZ6M9"
+  apiKey: "AIzaSyA1q2b0fyIidVRspGg31_xF_vpOu8dYRug",
+  authDomain: "ucn-property-tag-b7e0a.firebaseapp.com",
+  projectId: "ucn-property-tag-b7e0a",
+  storageBucket: "ucn-property-tag-b7e0a.firebasestorage.app",
+  messagingSenderId: "252936858515",
+  appId: "1:252936858515:web:3026ba3bfdb080949ad666",
+  measurementId: "G-TSRG9YCCHN"
 };
 
 function updateFirebaseStatus(message, color = "#004aad") {
@@ -89,6 +89,15 @@ function showAlert(message, title = 'Notice') {
 
 function showConfirm(message, title = 'Confirm') {
   return showModal({ title, message, confirmText: 'Yes', cancelText: 'No', showCancel: true });
+}
+
+function setDeleteLoadingState(isLoading) {
+  const overlay = document.getElementById('delete-loading-overlay');
+  if (!overlay) return;
+
+  document.body.classList.toggle('delete-loading', isLoading);
+  overlay.classList.toggle('hidden', !isLoading);
+  overlay.classList.toggle('visible', isLoading);
 }
 
 function initializeFirebase() {
@@ -509,27 +518,34 @@ async function deleteCard(btnElement) {
   const cardWrapper = btnElement.closest('.card-ui-wrapper');
   if (!cardWrapper) return;
 
-  allCards = allCards.filter(card => card !== cardWrapper);
-  cardWrapper.remove();
-  totalCardCount--;
-  reorganizePages();
-  refreshDashboardSummary();
-  updateSelectionCount();
-  updateFirebaseStatus('Deleting card...', '#004aad');
+  setDeleteLoadingState(true);
+  updateFirebaseStatus('Deleting card... Please wait.', '#004aad');
 
-  if (allCards.length === 0) {
-    restoreDefaultCards();
+  try {
+    await deleteCardRecord(cardWrapper);
+
+    allCards = allCards.filter(card => card !== cardWrapper);
+    cardWrapper.remove();
+    totalCardCount--;
+    reorganizePages();
     refreshDashboardSummary();
-  }
+    updateSelectionCount();
 
-  deleteCardRecord(cardWrapper).catch(() => {
-    updateFirebaseStatus('Card removed locally, but delete failed on the server.', '#9a0603');
-  });
+    if (allCards.length === 0) {
+      restoreDefaultCards();
+      refreshDashboardSummary();
+      showAlert('Card deleted successfully. No cards remained, so the default cards have been restored.');
+    } else {
+      showAlert('Card deleted successfully.');
+    }
 
-  if (allCards.length === 0) {
-    showAlert('Card deleted successfully. No cards remained, so the default cards have been restored.');
-  } else {
-    showAlert('Card deleted successfully.');
+    updateFirebaseStatus('Delete completed.', '#499632');
+  } catch (err) {
+    console.error('Single card delete failed', err);
+    updateFirebaseStatus('Card delete failed on the server.', '#9a0603');
+    showAlert('The card could not be deleted. Please try again.');
+  } finally {
+    setDeleteLoadingState(false);
   }
 }
 
@@ -611,33 +627,47 @@ async function deleteSelectedCards() {
   const confirmDelete = await showConfirm(`Delete ${selectedCards.length} selected card(s)? This will also remove saved cards from the database.`);
   if (!confirmDelete) return;
 
-  // Remove cards from the UI first so the app feels responsive.
-  selectedCards.forEach((cardWrapper) => {
-    allCards = allCards.filter(card => card !== cardWrapper);
-    cardWrapper.remove();
-    totalCardCount--;
-  });
-  reorganizePages();
-  refreshDashboardSummary();
-  clearSelection();
-  updateFirebaseStatus('Deleting selected cards...', '#004aad');
+  const filterEl = document.getElementById('filter-dept');
+  const activeDepartmentFilter = filterEl ? filterEl.value : 'ALL';
+  const shouldResetFilterAfterDelete = activeDepartmentFilter !== 'ALL' &&
+    selectedCards.every(card => getCardDepartmentName(card) === activeDepartmentFilter);
 
-  if (allCards.length === 0) {
-    restoreDefaultCards();
-    refreshDashboardSummary();
+  setDeleteLoadingState(true);
+  updateFirebaseStatus('Deleting selected cards... Please wait.', '#004aad');
+
+  try {
+    await Promise.all(selectedCards.map((cardWrapper) => deleteCardRecord(cardWrapper)));
+
+    selectedCards.forEach((cardWrapper) => {
+      allCards = allCards.filter(card => card !== cardWrapper);
+      cardWrapper.remove();
+      totalCardCount--;
+    });
+
+    if (allCards.length === 0) {
+      restoreDefaultCards();
+      refreshDashboardSummary();
+      if (filterEl) filterEl.value = 'ALL';
+      showAlert('Selected cards were deleted successfully. No cards remained, so the default cards have been restored.');
+    } else {
+      if (shouldResetFilterAfterDelete) {
+        resetFilterToAllDepartments();
+      } else {
+        reorganizePages();
+      }
+      refreshDashboardSummary();
+      clearSelection();
+      showAlert('Selected cards were deleted successfully.');
+    }
+
+    updateFirebaseStatus('Delete completed.', '#499632');
+  } catch (err) {
+    console.error('Bulk delete failed', err);
+    updateFirebaseStatus('Some deletes failed on the server.', '#9a0603');
+    showAlert('Some selected cards could not be deleted. Please try again.');
+  } finally {
+    setDeleteLoadingState(false);
   }
-
-  const deletePromises = selectedCards.map((cardWrapper) => deleteCardRecord(cardWrapper));
-
-  if (allCards.length === 0) {
-    setTimeout(() => showAlert('Selected cards were deleted successfully. No cards remained, so the default cards have been restored.'), 200);
-  } else {
-    setTimeout(() => showAlert('Selected cards were deleted successfully.'), 200);
-  }
-
-  Promise.all(deletePromises)
-    .then(() => updateFirebaseStatus('Delete completed.', '#499632'))
-    .catch(() => updateFirebaseStatus('Some deletes failed on the server.', '#9a0603'));
 }
 
 function applyBatchAction() {
@@ -659,6 +689,25 @@ function printSelected() {
   printCards(selected);
 }
 
+function renderEmptyDepartmentState(departmentName = 'this department') {
+  const container = document.getElementById('pages-container');
+  if (!container) return;
+
+  const safeDeptName = departmentName && departmentName !== 'ALL' ? departmentName : 'this department';
+
+  container.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-state-backdrop"></div>
+      <div class="empty-state-panel">
+        <div class="empty-state-message">No cards found for ${safeDeptName} department.</div>
+        <div class="empty-state-actions">
+          <button class="neu-btn primary empty-state-btn" type="button" onclick="openAddCardsForCurrentDepartment()">Add Cards</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // Reflow cards into pages. If `cardsList` is provided, that list/order is used.
 function reorganizePages(cardsList) {
   const container = document.getElementById('pages-container');
@@ -666,6 +715,13 @@ function reorganizePages(cardsList) {
 
   // Clear the container
   container.innerHTML = '';
+
+  if (cardsToRender.length === 0) {
+    const filterEl = document.getElementById('filter-dept');
+    const selectedDepartment = filterEl && filterEl.value && filterEl.value !== 'ALL' ? filterEl.value : 'this department';
+    renderEmptyDepartmentState(selectedDepartment);
+    return;
+  }
 
   // Put them back in perfect groups of 10
   let currentGrid = null;
@@ -1088,28 +1144,28 @@ function buildFilterOptions() {
 }
 
 // Apply department filter based on sidebar control
+function getCardDepartmentName(card) {
+  const deptSelect = card.querySelector('.dept-select');
+  if (deptSelect && deptSelect.selectedIndex >= 0) {
+    const deptText = deptSelect.options[deptSelect.selectedIndex]?.text.trim();
+    if (deptText) return deptText;
+  }
+
+  const inputs = card.querySelectorAll('.underline-input');
+  return inputs[4] ? inputs[4].value.trim() : '';
+}
+
 function applyFilter() {
-  const filterVal = document.getElementById('filter-dept').value;
+  const filterEl = document.getElementById('filter-dept');
   const searchVal = document.getElementById('search-query').value.trim().toLowerCase();
+  const filterVal = filterEl ? filterEl.value : 'ALL';
 
   // Always start from the full collection of cards so repeated filtering works.
   let cards = [...allCards];
 
   // Filter by department if requested
   if (filterVal && filterVal !== 'ALL') {
-    cards = cards.filter(card => {
-      const deptSelect = card.querySelector('.dept-select');
-      let deptName = '';
-      if (deptSelect) {
-        const idx = deptSelect.selectedIndex;
-        deptName = idx >= 0 ? deptSelect.options[idx].text.trim() : '';
-      }
-      if (!deptName) {
-        const inputs = card.querySelectorAll('.underline-input');
-        deptName = inputs[4] ? inputs[4].value.trim() : '';
-      }
-      return deptName === filterVal;
-    });
+    cards = cards.filter(card => getCardDepartmentName(card) === filterVal);
   }
 
   // Keyword search across department and card input fields
@@ -1128,8 +1184,39 @@ function applyFilter() {
     });
   }
 
+  if (cards.length === 0) {
+    renderEmptyDepartmentState(filterVal);
+    return;
+  }
+
   // Reflow only the resulting cards (this preserves their state)
   reorganizePages(cards);
+}
+
+function resetFilterToAllDepartments() {
+  const filterEl = document.getElementById('filter-dept');
+  if (!filterEl) return;
+
+  filterEl.value = 'ALL';
+  applyFilter();
+  refreshDashboardSummary();
+}
+
+function openAddCardsForCurrentDepartment() {
+  const filterEl = document.getElementById('filter-dept');
+  const addDeptSelect = document.getElementById('add-dept-select');
+  const addQty = document.getElementById('add-qty');
+
+  if (!addDeptSelect) return;
+
+  const currentDepartment = filterEl && filterEl.value && filterEl.value !== 'ALL' ? filterEl.value : addDeptSelect.value;
+  addDeptSelect.value = currentDepartment;
+
+  if (addQty) {
+    addQty.value = '1';
+  }
+
+  addNewCards();
 }
 
 // Keyboard navigation: move focus between `.underline-input` fields
