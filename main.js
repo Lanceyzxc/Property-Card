@@ -132,16 +132,26 @@ function getCardData(cardWrapper) {
     cardId,
     dept,
     color,
+    entityName: cardWrapper.dataset.entityName || '',
+    quantity: cardWrapper.dataset.quantity || inputs[0] && inputs[0].dataset.quantity || '1',
+    unit: cardWrapper.dataset.unit || inputs[0] && inputs[0].dataset.unit || 'pc',
     icsParNo: inputs[0] ? inputs[0].value.trim() : '',
     propertyNo: inputs[1] ? inputs[1].value.trim() : '',
     dateAcquired: inputs[2] ? inputs[2].value.trim() : '',
     acquisitionCost: inputs[3] ? inputs[3].value.trim() : '',
-    fund: inputs[4] ? inputs[4].value.trim() : '',
+    fund: cardWrapper.dataset.fund || (inputs[4] ? inputs[4].value.trim() : ''),
     endUserLocation: inputs[5] ? inputs[5].value.trim() : '',
     requestedBy: inputs[6] ? inputs[6].value.trim() : '',
     supplier: inputs[7] ? inputs[7].value.trim() : '',
     reference: inputs[8] ? inputs[8].value.trim() : '',
     itemDescription: inputs[9] ? inputs[9].value.trim() : '',
+    endUserName: cardWrapper.dataset.endUserName || '',
+    endUserPosition: cardWrapper.dataset.endUserPosition || '',
+    endUserDate: cardWrapper.dataset.endUserDate || '',
+    issuerName: cardWrapper.dataset.issuerName || '',
+    issuerPosition: cardWrapper.dataset.issuerPosition || '',
+    issuerDate: cardWrapper.dataset.issuerDate || '',
+    pageNo: cardWrapper.dataset.pageNo || '',
     savedAt: new Date().toISOString()
   };
 }
@@ -831,7 +841,7 @@ function processExcel() {
   const fileInput = document.getElementById('excel-file');
   const statusText = document.getElementById('upload-status');
   const file = fileInput.files[0];
-  
+
   if (!file) {
     statusText.style.color = "#9a0603";
     statusText.innerText = "Please select an Excel file first.";
@@ -849,14 +859,12 @@ function processExcel() {
       const workbook = XLSX.read(data, {type: 'array'});
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
-      
-      // UPDATE: Nilagyan natin ng {range: 4} para i-skip ang unang 4 rows (Titles/Headings). 
-      // Magsisimula siyang magbasa ng exact table headers sa Row 5.
-      // ADDED: raw: false para eksaktong text ng Date ang basahin, hindi serial number.
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, {range: 4, defval: "", raw: false});
-      
-      if(jsonData.length > 0) {
-        // BAGO: Burahin muna ang mga naka-display na cards at i-reset ang bilang bago ilagay ang Excel data
+
+      const rawRows = XLSX.utils.sheet_to_json(worksheet, {defval: "", raw: false});
+      const startIndex = findExcelHeaderStart(rawRows);
+      const jsonData = startIndex >= 0 ? rawRows.slice(startIndex) : rawRows;
+
+      if (jsonData.length > 0) {
         document.getElementById('pages-container').innerHTML = '';
         totalCardCount = 0;
         uniqueCardId = 0;
@@ -869,12 +877,12 @@ function processExcel() {
           statusText.innerText = `Success! Generated ${generatedCount} cards.`;
         } else {
           statusText.style.color = "#9a0603";
-          statusText.innerText = "No cards generated: only Expendable items were found.";
+          statusText.innerText = "No cards generated: no valid rows were found in the Excel file.";
         }
-        fileInput.value = ""; // Clear input after reading
+        fileInput.value = "";
       } else {
         statusText.style.color = "#9a0603";
-        statusText.innerText = "Excel file is empty or headers not found on Row 5.";
+        statusText.innerText = "Excel file is empty or no usable header row was found.";
       }
     } catch(err) {
       statusText.style.color = "#9a0603";
@@ -886,40 +894,51 @@ function processExcel() {
   reader.readAsArrayBuffer(file);
 }
 
-// Smart header matching for Excel exports with inconsistent spacing, punctuation, and aliases.
-function normalizeHeaderName(value) {
-  if (value === undefined || value === null) return '';
-  return String(value)
-    .toLowerCase()
-    .replace(/&/g, 'and')
-    .replace(/[\s\r\n\-_./()]+/g, '')
-    .trim();
+function findExcelHeaderStart(rows) {
+  const aliases = [
+    'date delivered', 'fund', 'reference', 'supplier', 'purpose/procurement title',
+    'quantity', 'unit', 'item description', 'inventory/property classification',
+    'ris no. (if applicable)', 'ics no. (if applicable)', 'par no. (if applicable)',
+    'end user', 'department', 'property no./item no.', 'property no.'
+  ];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i] || {};
+    let found = 0;
+
+    for (const key of Object.keys(row)) {
+      const normalized = String(key).trim().toLowerCase().replace(/[\s\r\n]+/g, ' ');
+      if (aliases.some(alias => normalized.includes(alias))) {
+        found++;
+      }
+    }
+
+    if (found >= 3) return i;
+  }
+
+  return 0;
 }
 
+// BAGO: Smart function para hanapin ang header kahit may extra spaces o line break sa Excel
 function getExcelValue(row, targetHeader) {
-  const target = normalizeHeaderName(targetHeader);
-  if (!target) return '';
+  const target = targetHeader.toLowerCase().replace(/[\s\r\n]+/g, '');
 
   for (let key in row) {
-    const currentKey = normalizeHeaderName(key);
-    if (!currentKey) continue;
-    if (currentKey === target || currentKey.includes(target) || target.includes(currentKey)) {
+    const currentKey = key.toLowerCase().replace(/[\s\r\n]+/g, '');
+    if (currentKey === target) {
       return row[key];
     }
   }
   return '';
 }
 
-function getPreferredExcelValue(row, aliases) {
-  const candidates = Array.isArray(aliases) ? aliases : [aliases];
-
-  for (const alias of candidates) {
+function getExcelValueAny(row, aliases) {
+  for (const alias of aliases) {
     const value = getExcelValue(row, alias);
     if (value !== undefined && value !== null && String(value).trim() !== '') {
       return value;
     }
   }
-
   return '';
 }
 
@@ -935,176 +954,94 @@ function populateFromExcel(dataRows) {
   let generatedCount = 0;
 
   dataRows.forEach(row => {
-    const classification = formatValue(getPreferredExcelValue(row, [
-      'Inventory/Property Classification',
-      'Inventory Property Classification',
-      'Property Classification',
-      'Classification'
-    ]));
-    const normalizedClassification = classification.toLowerCase().replace(/[\s\u00A0]+/g, ' ').trim();
-    const shouldGenerate = normalizedClassification.includes('semi') || normalizedClassification.includes('non');
+    const rowValues = Object.values(row || {}).map(v => String(v || '').trim());
+    const hasAnyData = rowValues.some(v => v !== '');
+    if (!hasAnyData) return;
 
-    if (!classification || !shouldGenerate) {
-      return; // skip Expendable or undefined classification rows
-    }
+    let matchedColor = departments[0].color;
+    const rowDept = getExcelValueAny(row, ['Department', 'Dept', 'Office/Department']);
 
-    // 1. Check if the row has a "Department" header to set the exact color
-    let matchedColor = departments[0].color; // Default fallback color (GASS)
-    let rowDept = getExcelValue(row, 'Department');
-    
     if (rowDept) {
-       const cleanDept = rowDept.toString().trim().toUpperCase();
-       
-       // BAGO: Hahanapin kung 'kasama' o bahagi ng text ang pangalan ng Department 
-       // kahit may mga dugtong pa ito (e.g., "CFAST-Extension" -> mababasa ang "CFAST")
-       const foundDept = departments.find(d => cleanDept.includes(d.name));
-       if (foundDept) {
-         matchedColor = foundDept.color;
-       }
-    }
-
-    // 2. Create a new card
-    createSingleCard(matchedColor);
-    generatedCount++;
-    
-    // 3. Target the newly created card
-    const cards = document.querySelectorAll('.card-ui-wrapper');
-    const newCard = cards[cards.length - 1];
-    const inputs = newCard.querySelectorAll('.underline-input');
-    
-    // 4. Map the Excel column values to PAR fields using a broader alias list,
-    // so the import matches the actual exported header names rather than only a small fixed set.
-    const ics = formatValue(getPreferredExcelValue(row, [
-      'ICS No. (If Applicable)',
-      'ICS/PAR No.',
-      'ICS No.',
-      'ICS Number',
-      'ICS',
-      'PAR No. (If Applicable)',
-      'PAR No.',
-      'PAR Number'
-    ]));
-    const par = formatValue(getPreferredExcelValue(row, [
-      'PAR No.(If Applicable)',
-      'PAR No. (If Applicable)',
-      'PAR No.',
-      'PAR Number',
-      'PAR'
-    ]));
-
-    let icsParVal = '';
-    if (ics && ics !== 'N/A') {
-      icsParVal = ics;
-    } else if (par && par !== 'N/A') {
-      icsParVal = par;
-    } else if (ics === 'N/A' || par === 'N/A') {
-      icsParVal = 'N/A';
-    }
-    inputs[0].value = icsParVal;
-
-    inputs[1].value = formatValue(getPreferredExcelValue(row, [
-      'Property No.',
-      'Property No./Item No.',
-      'Property Number',
-      'Property Number/Item No',
-      'Item No.',
-      'Item Number',
-      'Property ID'
-    ]));
-
-    inputs[2].value = formatValue(getPreferredExcelValue(row, [
-      'Date Acquired',
-      'Date Delivered',
-      'Date Received',
-      'Date of Acquisition'
-    ]));
-
-    const cost = getPreferredExcelValue(row, [
-      'Acquisition Cost',
-      'Unit Cost',
-      'Cost',
-      'Amount',
-      'Total Cost',
-      'Total Amount'
-    ]);
-    let costStr = cost !== undefined && cost !== null ? cost.toString().trim() : '';
-
-    if (costStr.toLowerCase() === 'n/a') {
-      inputs[3].value = 'N/A';
-    } else {
-      let cleanCost = costStr.replace(/[^0-9.-]+/g, '');
-      if (!isNaN(cleanCost) && cleanCost !== '') {
-        inputs[3].value = Number(cleanCost).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
-      } else {
-        inputs[3].value = formatValue(cost);
+      const cleanDept = rowDept.toString().trim().toUpperCase();
+      const foundDept = departments.find(d => cleanDept.includes(d.name));
+      if (foundDept) {
+        matchedColor = foundDept.color;
       }
     }
 
-    inputs[4].value = formatValue(getPreferredExcelValue(row, [
-      'Fund',
-      'Fund Cluster',
-      'Fund Cluster Code'
-    ]));
+    createSingleCard(matchedColor);
+    generatedCount++;
 
-    inputs[5].value = formatValue(getPreferredExcelValue(row, [
-      'End-User/Location',
-      'End User/Location',
-      'End User',
-      'End-User',
-      'Location',
-      'Office/Location',
-      'Requested by'
-    ]));
+    const cards = document.querySelectorAll('.card-ui-wrapper');
+    const newCard = cards[cards.length - 1];
+    const inputs = newCard.querySelectorAll('.underline-input');
 
-    inputs[6].value = formatValue(getPreferredExcelValue(row, [
-      'Requested by',
-      'Requested By',
-      'Requesting Office',
-      'End User',
-      'End-User',
-      'Assigned To'
-    ]));
+    const entityName = formatValue(getExcelValueAny(row, ['Entity Name', 'Entity', 'Office Name', 'Agency Name']));
+    const quantity = formatValue(getExcelValueAny(row, ['Quantity', 'Qty', 'No. of Units', 'No. of Item']));
+    const unit = formatValue(getExcelValueAny(row, ['Unit', 'Unit of Measure', 'Unit Measure', 'UOM']));
+    const fund = formatValue(getExcelValueAny(row, ['Fund Cluster', 'Fund', 'Cluster', 'Fund Code']));
+    const ics = formatValue(getExcelValueAny(row, ['ICS No. (If Applicable)', 'ICS/PAR No.', 'ICS No.', 'ICS Number', 'RIS No. (If Applicable)']));
+    const par = formatValue(getExcelValueAny(row, ['PAR No.(If Applicable)', 'PAR No.', 'PAR Number', 'PAR No. (If Applicable)']));
+    const icsParVal = (ics && ics !== 'N/A') ? ics : (par && par !== 'N/A') ? par : (ics === 'N/A' || par === 'N/A') ? 'N/A' : '';
+    const propertyNo = formatValue(getExcelValueAny(row, ['Property No.', 'Property Number', 'Property No./Item No.', 'Item No.', 'Property Number/Item No.']));
+    const dateAcquired = formatValue(getExcelValueAny(row, ['Date Acquired', 'Date Delivered', 'Date Received', 'Acquisition Date']));
+    const acquisitionCostRaw = getExcelValueAny(row, ['Acquisition Cost', 'Unit Cost', 'Total Cost', 'Cost', 'Amount', 'Acquisition Amount', 'Value']);
+    let acquisitionCost = '';
+    const costStr = acquisitionCostRaw !== undefined && acquisitionCostRaw !== null ? acquisitionCostRaw.toString().trim() : '';
+    if (costStr.toLowerCase() === 'n/a') {
+      acquisitionCost = 'N/A';
+    } else {
+      const cleanCost = costStr.replace(/[^0-9.-]+/g, '');
+      if (!isNaN(cleanCost) && cleanCost !== '') {
+        acquisitionCost = Number(cleanCost).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+      } else {
+        acquisitionCost = formatValue(acquisitionCostRaw);
+      }
+    }
+    const endUserName = formatValue(getExcelValueAny(row, ['End User', 'End-User', 'End User/Location', 'Requested by', 'Requested By', 'Received by', 'End User Name']));
+    const endUserPosition = formatValue(getExcelValueAny(row, ['Position/Office', 'Office', 'End User Position', 'Position']));
+    const endUserDate = formatValue(getExcelValueAny(row, ['Date', 'Received Date', 'End User Date', 'End User/Date']));
+    const issuerName = formatValue(getExcelValueAny(row, ['Supply and/or Property Custodian', 'Issued By', 'Issuer Name', 'Property Custodian']));
+    const issuerPosition = formatValue(getExcelValueAny(row, ['Issuer Position', 'Position/Office', 'Property Custodian Position']));
+    const issuerDate = formatValue(getExcelValueAny(row, ['Issued Date', 'Issue Date', 'Date Issued', 'Date of Issuance']));
+    const pageNo = formatValue(getExcelValueAny(row, ['Page No', 'Page Number', 'No. of Page', 'Page']));
+    const supplier = formatValue(getExcelValueAny(row, ['Supplier', 'Vendor', 'Supplier Name']));
+    const reference = formatValue(getExcelValueAny(row, ['Reference', 'P.O/J.O/Contract Ref', 'PO/J.O/Contract Ref', 'Contract Ref', 'Purchase Order']));
+    const purposeTitle = formatValue(getExcelValueAny(row, ['Purpose/Procurement Title', 'Procurement Title', 'Purpose', 'Title']));
+    const itemDescriptionRaw = formatValue(getExcelValueAny(row, ['Item Description', 'Items Description', 'Description', 'Full Description', 'Item Name']));
+    const itemDescription = [purposeTitle, itemDescriptionRaw].filter(Boolean).join(' - ') || formatValue(getExcelValueAny(row, ['Item Description', 'Items Description', 'Description', 'Full Description', 'Item Name']));
 
-    inputs[7].value = formatValue(getPreferredExcelValue(row, [
-      'Supplier',
-      'Supplier Name',
-      'Supplier/Company',
-      'Vendor',
-      'Company'
-    ]));
+    newCard.dataset.entityName = entityName || '';
+    newCard.dataset.quantity = quantity || '1';
+    newCard.dataset.unit = unit || 'pc';
+    newCard.dataset.fund = fund || '';
+    newCard.dataset.endUserName = endUserName || '';
+    newCard.dataset.endUserPosition = endUserPosition || '';
+    newCard.dataset.endUserDate = endUserDate || '';
+    newCard.dataset.issuerName = issuerName || '';
+    newCard.dataset.issuerPosition = issuerPosition || '';
+    newCard.dataset.issuerDate = issuerDate || '';
+    newCard.dataset.pageNo = pageNo || '';
 
-    inputs[8].value = formatValue(getPreferredExcelValue(row, [
-      'P.O/J.O/Contract Ref',
-      'PO/J.O/Contract Ref',
-      'P.O./J.O./Contract Ref',
-      'PO/JO/Contract Ref',
-      'Contract Ref',
-      'Reference',
-      'Ref No.',
-      'Reference No.'
-    ]));
+    inputs[0].value = icsParVal;
+    inputs[1].value = propertyNo;
+    inputs[2].value = dateAcquired;
+    inputs[3].value = acquisitionCost;
+    inputs[4].value = fund;
+    inputs[5].value = endUserName || rowDept || '';
+    inputs[6].value = endUserName || '';
+    inputs[7].value = supplier;
+    inputs[8].value = reference;
+    inputs[9].value = itemDescription;
 
-    inputs[9].value = formatValue(getPreferredExcelValue(row, [
-      'Item Description',
-      'Items Description',
-      'Description',
-      'Full Description',
-      'Property Description',
-      'Article Description',
-      'Item/Description'
-    ]));
-
-    // If this is a textarea with auto-resize, trigger its adjust (if attached)
     if (inputs[9] && inputs[9].tagName === 'TEXTAREA') {
       const ev = new Event('input', { bubbles: true });
       inputs[9].dispatchEvent(ev);
     }
 
-    // Auto-save the imported card immediately after fields are populated
     saveCardToFirebase(newCard);
   });
 
-  // Refresh department filter options after import
   buildFilterOptions();
   applyFilter();
   return generatedCount;

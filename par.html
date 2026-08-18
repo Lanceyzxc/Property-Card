@@ -287,21 +287,29 @@
                     return;
                 }
                 const data = doc.data();
-                // Map fields
+                const fallbackDescription = data.itemDescription || data.description || data.fullDescription || '';
+                const fallbackPropertyNo = data.propertyNo || data.propertyNumber || '';
+                const fallbackQty = data.quantity || data.qty || '1';
+                const fallbackUnit = data.unit || data.uom || 'pc';
+                const fallbackFund = data.fund || data.fundCluster || '';
+                const fallbackParNo = data.icsParNo || data.parNo || data.parNumber || id;
+                const fallbackEndUser = data.endUserName || data.requestedBy || data.endUserLocation || '';
+                const fallbackIssuer = data.issuerName || data.propertyCustodian || data.supplier || '';
+
                 setText('val-entity', data.entityName || '');
-                setText('val-fund', data.fund || '');
-                setText('val-parno', data.icsParNo || id);
-                setText('val-qty', data.quantity || '1');
-                setText('val-unit', data.unit || 'pc');
-                setText('val-desc', data.itemDescription || '');
-                setText('val-prop', data.propertyNo || '');
+                setText('val-fund', fallbackFund);
+                setText('val-parno', fallbackParNo);
+                setText('val-qty', fallbackQty);
+                setText('val-unit', fallbackUnit);
+                setText('val-desc', fallbackDescription);
+                setText('val-prop', fallbackPropertyNo);
                 setText('val-date', data.dateAcquired || '');
                 setText('val-amount', data.acquisitionCost || '');
-                setText('val-enduser', data.endUserName || data.requestedBy || '');
-                setText('val-enduser-pos', data.endUserPosition || '');
+                setText('val-enduser', fallbackEndUser);
+                setText('val-enduser-pos', data.endUserPosition || data.position || '');
                 setText('val-enduser-date', data.endUserDate || '');
-                setText('val-issuer', data.issuerName || '');
-                setText('val-issuer-pos', data.issuerPosition || '');
+                setText('val-issuer', fallbackIssuer);
+                setText('val-issuer-pos', data.issuerPosition || data.issuerOffice || '');
                 setText('val-issuer-date', data.issuerDate || '');
                 setText('val-pageno', data.pageNo || '');
             })
