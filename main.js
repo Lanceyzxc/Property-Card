@@ -128,7 +128,10 @@ function getCardData(cardWrapper) {
   const color = deptSelect ? deptSelect.value : departments[0].color;
   const inputs = cardWrapper.querySelectorAll('.underline-input');
 
-  const fullItemDescription = cardWrapper.dataset.itemDescriptionFull || (inputs[9] ? inputs[9].value.trim() : '');
+  const rawItemDescription = inputs[9] ? inputs[9].value.trim() : '';
+  const fullItemDescription = cardWrapper.dataset.itemDescriptionFull && cardWrapper.dataset.itemDescriptionFull.trim().length > 0
+    ? cardWrapper.dataset.itemDescriptionFull.trim()
+    : rawItemDescription;
 
   return {
     cardId,
@@ -191,6 +194,9 @@ function setupFirebaseAutoSave(cardWrapper) {
 
   inputs.forEach(input => {
     input.addEventListener('input', () => {
+      if (input.tagName === 'TEXTAREA') {
+        cardWrapper.dataset.itemDescriptionFull = input.value || '';
+      }
       saveOnChange();
       if (input.tagName === 'TEXTAREA') {
         // Regenerate QR on text change so print preview stays current
@@ -198,6 +204,9 @@ function setupFirebaseAutoSave(cardWrapper) {
       }
     });
     input.addEventListener('change', () => {
+      if (input.tagName === 'TEXTAREA') {
+        cardWrapper.dataset.itemDescriptionFull = input.value || '';
+      }
       saveOnChange();
       renderCardQRCode(cardWrapper);
     });
@@ -464,6 +473,11 @@ function createSingleCard(initColor, cardData = null) {
   textareas.forEach((ta) => {
     // helper to enforce max two visual rows by trimming overflowing content
     const adjust = (el) => {
+      const fullValue = (el.value || '').trim();
+      if (el.tagName === 'TEXTAREA') {
+        newCard.dataset.itemDescriptionFull = fullValue;
+      }
+
       el.style.height = 'auto';
       const cs = window.getComputedStyle(el);
       const fontSize = parseFloat(cs.fontSize) || 18;

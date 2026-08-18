@@ -308,15 +308,15 @@
                 const data = doc.data();
                 // ENHANCED: Map ALL important fields from Excel headers via Firestore
                 // This ensures the PAR form receives complete data from Excel without blanks
-                setText('val-fund', data.fund || '');                                    // Fund
-                setText('val-parno', data.icsParNo || id);                              // ICS/PAR No
-                setText('val-qty', String(data.quantity || '1'));                       // Quantity from Excel
-                setText('val-unit', String(data.unit || 'pc'));                         // Unit of Measurement from Excel
-                setText('val-desc', data.itemDescription || '');                        // Full Item Description
-                setText('val-prop', data.propertyNo || '');                             // Property Number
-                setText('val-date', data.dateAcquired || '');                           // Date Acquired
-                setText('val-amount', data.acquisitionCost || '');                      // Acquisition Cost/Amount
-                setText('val-enduser', data.endUserLocation || data.requestedBy || ''); // End User Location
+                setText('val-fund', data.fund || '');
+                setText('val-parno', data.icsParNo || id);
+                setText('val-qty', String(data.quantity || '1'));
+                setText('val-unit', String(data.unit || 'pc'));
+                setText('val-desc', data.itemDescription || data.itemDescriptionFull || '');
+                setText('val-prop', data.propertyNo || '');
+                setText('val-date', data.dateAcquired || '');
+                setText('val-amount', data.acquisitionCost || '');
+                setText('val-enduser', data.endUserLocation || data.requestedBy || '');
             })
             .catch(err => console.error('Failed to load document', err));
     })();
