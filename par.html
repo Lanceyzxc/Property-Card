@@ -147,7 +147,7 @@
     
     <div class="info-header">
         <div class="info-left">
-            <div>Entity Name : <strong id="val-entity"></strong></div>
+            <div>Entity Name : <strong>CAMARINES NORTE STATE COLLEGE</strong></div>
             <div>Fund Cluster : <strong id="val-fund"></strong></div>
         </div>
         <div class="info-right">
@@ -178,11 +178,11 @@
             <tr>
                 <td></td><td></td><td class="col-desc">Serial Number:</td><td></td><td></td><td></td>
             </tr>
-            <tr><td></td><td></td><td class="col-desc"></td><td></td><td></td><td></td></tr>
-            <tr><td></td><td></td><td class="col-desc"></td><td></td><td></td><td></td></tr>
-            <tr><td></td><td></td><td class="col-desc"></td><td></td><td></td><td></td></tr>
-            <tr><td></td><td></td><td class="col-desc"></td><td></td><td></td><td></td></tr>
-            <tr><td></td><td></td><td class="col-desc"></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td class="col-desc">1.)</td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td class="col-desc">2.)</td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td class="col-desc">3.)</td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td class="col-desc">4.)</td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td class="col-desc">5.)</td><td></td><td></td><td></td></tr>
             <!-- Empty Rows for grid effect -->
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
@@ -192,7 +192,7 @@
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr>
                 <td></td><td></td>
-                <td class="col-desc"></td>
+                <td class="col-desc">Note: Previously Issued to Maam Nora<br>Macasinag during her time as CBPA Dean</td>
                 <td></td><td></td><td></td>
             </tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
@@ -209,13 +209,13 @@
                     <div class="footer-content">
                         <div class="sign-label">Received by:</div>
                         <div class="sign-details">
-                            <div class="sign-name" id="val-enduser"></div>
+                            <div class="sign-name" id="val-enduser">GEHANA D. LAMUG,DBA</div>
                             <div class="sign-sub">Signatue over Printed Name of End User</div>
                             <div class="sign-spacer"></div>
-                            <div class="sign-date-pos" id="val-enduser-pos"></div>
+                            <div class="sign-date-pos">11/3/2025</div>
                             <div class="sign-date-pos">Position/Office</div>
                             <div class="sign-spacer"></div>
-                            <div class="sign-date-pos" id="val-enduser-date">Date</div>
+                            <div class="sign-date-pos">Date</div>
                         </div>
                     </div>
                 </td>
@@ -223,13 +223,13 @@
                     <div class="footer-content">
                         <div class="sign-label">Issued by:</div>
                         <div class="sign-details">
-                            <div class="sign-name" id="val-issuer"></div>
+                            <div class="sign-name">ARSENIO GEM A. GARCILLANOSA</div>
                             <div class="sign-sub">Signatue over Printed Name of Supply and/or<br>Property Custodian</div>
                             <div class="sign-spacer"></div>
-                            <div class="sign-date-pos" id="val-issuer-pos"></div>
+                            <div class="sign-date-pos">11/3/2025</div>
                             <div class="sign-date-pos">Position/Office</div>
                             <div class="sign-spacer"></div>
-                            <div class="sign-date-pos" id="val-issuer-date">Date</div>
+                            <div class="sign-date-pos">Date</div>
                         </div>
                     </div>
                 </td>
@@ -237,7 +237,7 @@
         </tfoot>
     </table>
 
-    <div class="page-number" id="val-pageno"></div>
+    <div class="page-number">173</div>
 </div>
 
 </body>
@@ -288,7 +288,6 @@
                 }
                 const data = doc.data();
                 // Map fields
-                setText('val-entity', data.entityName || '');
                 setText('val-fund', data.fund || '');
                 setText('val-parno', data.icsParNo || id);
                 setText('val-qty', data.quantity || '1');
@@ -297,13 +296,7 @@
                 setText('val-prop', data.propertyNo || '');
                 setText('val-date', data.dateAcquired || '');
                 setText('val-amount', data.acquisitionCost || '');
-                setText('val-enduser', data.endUserName || data.requestedBy || '');
-                setText('val-enduser-pos', data.endUserPosition || '');
-                setText('val-enduser-date', data.endUserDate || '');
-                setText('val-issuer', data.issuerName || '');
-                setText('val-issuer-pos', data.issuerPosition || '');
-                setText('val-issuer-date', data.issuerDate || '');
-                setText('val-pageno', data.pageNo || '');
+                setText('val-enduser', data.endUserLocation || data.requestedBy || '');
             })
             .catch(err => console.error('Failed to load document', err));
     })();
