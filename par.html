@@ -133,37 +133,114 @@
             margin-top: 24px;
             page-break-inside: avoid;
         }
-        .ics-preview-title {
+        .ics-preview .annex {
+            text-align: right;
+            font-size: 11px;
+            margin-bottom: 30px;
+            padding-right: 50px;
+        }
+        .ics-preview .title {
             text-align: center;
             font-weight: bold;
             font-size: 13px;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
+            margin-bottom: 20px;
         }
-        .ics-preview .ics-table {
+        .ics-preview .info-section {
+            margin-bottom: 10px;
+            font-size: 11px;
+        }
+        .ics-preview .info-row {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        .ics-preview .entity-line {
+            width: 100%;
+        }
+        .ics-preview .cluster-line {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .ics-preview .underline {
+            display: inline-block;
+            border-bottom: 1px solid #000;
+        }
+        .ics-preview table {
             width: 100%;
             border-collapse: collapse;
             border: 2px solid #000;
-            table-layout: fixed;
         }
-        .ics-preview .ics-table th,
-        .ics-preview .ics-table td {
-            border: 1px solid #000;
-            padding: 6px 4px;
-            text-align: center;
+        .ics-preview th, .ics-preview td {
+            border-right: 2px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 2px 4px;
             vertical-align: top;
-            height: 28px;
         }
-        .ics-preview .ics-table th {
-            font-weight: bold;
-            background: #f2f2f2;
+        .ics-preview th:last-child, .ics-preview td:last-child {
+            border-right: none;
         }
-        .ics-preview .ics-table .col-qty { width: 10%; }
-        .ics-preview .ics-table .col-unit { width: 10%; }
-        .ics-preview .ics-table .col-desc { width: 38%; text-align: left; }
-        .ics-preview .ics-table .col-prop { width: 18%; }
-        .ics-preview .ics-table .col-date { width: 12%; }
-        .ics-preview .ics-table .col-amount { width: 12%; text-align: right; }
+        .ics-preview th {
+            text-align: center;
+            vertical-align: middle;
+            font-weight: normal;
+            font-size: 11px;
+            padding: 5px 2px;
+        }
+        .ics-preview .header-bottom-thick {
+            border-bottom: 2px solid #000 !important;
+        }
+        .ics-preview .valign-bottom {
+            vertical-align: bottom;
+            padding-bottom: 5px;
+        }
+        .ics-preview .col-qty { width: 8%; }
+        .ics-preview .col-unit { width: 7%; }
+        .ics-preview .col-ucost { width: 9%; }
+        .ics-preview .col-tcost { width: 10%; }
+        .ics-preview .col-desc { width: 36%; }
+        .ics-preview .col-item { width: 13%; }
+        .ics-preview .col-life { width: 17%; }
+        .ics-preview tbody tr td {
+            height: 18px;
+        }
+        .ics-preview .footer-row td {
+            border-top: 2px solid #000;
+            height: 150px;
+            padding: 5px 10px;
+            vertical-align: top;
+            border-bottom: none;
+        }
+        .ics-preview .footer-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .ics-preview .sign-label {
+            margin-bottom: 40px;
+        }
+        .ics-preview .sign-details {
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .ics-preview .sign-line {
+            border-bottom: 1px solid #000;
+            width: 70%;
+            margin-bottom: 3px;
+        }
+        .ics-preview .sign-sub {
+            font-size: 10px;
+            margin-bottom: 3px;
+        }
+        .ics-preview .sign-date-pos {
+            font-size: 10px;
+            margin-bottom: 3px;
+        }
+        .ics-preview .ics-data-cell {
+            text-align: center;
+        }
         /* Page Number */
         .page-number {
             text-align: center;
@@ -264,28 +341,90 @@
     </table>
 
     <div class="ics-preview">
-        <div class="ics-preview-title">INVENTORY CUSTODIAN SLIP</div>
-        <table class="ics-table">
+        <div class="annex">Annex A.3</div>
+        <div class="title">INVENTORY CUSTODIAN SLIP</div>
+        <div class="info-section">
+            <div class="info-row entity-line">
+                Entity Name : <strong>CAMARINES NORTE STATE COLLEGE</strong>
+            </div>
+            <div class="info-row cluster-line">
+                <div>Fund Cluster : <span class="underline" style="width: 180px;"><strong id="val-fund-ics"></strong></span></div>
+                <div>ICS No. <span class="underline" style="width: 180px;"><strong id="val-ics-no"></strong></span></div>
+            </div>
+        </div>
+        <table>
             <thead>
                 <tr>
-                    <th class="col-qty">Quantity</th>
-                    <th class="col-unit">Unit</th>
-                    <th class="col-desc">Description</th>
-                    <th class="col-prop">Property No.</th>
-                    <th class="col-date">Date Acquired</th>
-                    <th class="col-amount">Amount</th>
+                    <th rowspan="2" class="col-qty header-bottom-thick">Quantity</th>
+                    <th rowspan="2" class="col-unit header-bottom-thick">Unit</th>
+                    <th colspan="2">Amount</th>
+                    <th rowspan="2" class="col-desc header-bottom-thick">Description</th>
+                    <th rowspan="2" class="col-item header-bottom-thick">Item No.</th>
+                    <th rowspan="2" class="col-life header-bottom-thick valign-bottom">Estimated Useful Life</th>
+                </tr>
+                <tr>
+                    <th class="col-ucost header-bottom-thick">Unit Cost</th>
+                    <th class="col-tcost header-bottom-thick">Total Cost</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td id="val-ics-qty">&nbsp;</td>
-                    <td id="val-ics-unit">&nbsp;</td>
-                    <td id="val-ics-desc" class="col-desc">&nbsp;</td>
-                    <td id="val-ics-prop">&nbsp;</td>
-                    <td id="val-ics-date">&nbsp;</td>
-                    <td id="val-ics-amount" class="col-amount">&nbsp;</td>
+                    <td id="val-ics-qty" class="ics-data-cell">&nbsp;</td>
+                    <td id="val-ics-unit" class="ics-data-cell">&nbsp;</td>
+                    <td id="val-ics-ucost" class="ics-data-cell">&nbsp;</td>
+                    <td id="val-ics-tcost" class="ics-data-cell">&nbsp;</td>
+                    <td id="val-ics-desc" class="ics-data-cell">&nbsp;</td>
+                    <td id="val-ics-item" class="ics-data-cell">&nbsp;</td>
+                    <td id="val-ics-life" class="ics-data-cell">&nbsp;</td>
                 </tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             </tbody>
+            <tfoot>
+                <tr class="footer-row">
+                    <td colspan="4">
+                        <div class="footer-content">
+                            <div class="sign-label">Received from :</div>
+                            <div class="sign-details">
+                                <div class="sign-line"></div>
+                                <div class="sign-sub">Signature Over Printed Name</div>
+                                <div class="sign-date-pos">Position/Office</div>
+                                <div class="sign-date-pos">Date</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td colspan="3">
+                        <div class="footer-content">
+                            <div class="sign-label">Received by:</div>
+                            <div class="sign-details">
+                                <div class="sign-line"></div>
+                                <div class="sign-sub">Signature Over Printed Name</div>
+                                <div class="sign-date-pos">Position/Office</div>
+                                <div class="sign-date-pos">Date</div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tfoot>
         </table>
     </div>
 
@@ -341,7 +480,9 @@
                 const data = doc.data();
                 // Map all important fields from Firestore, including imported Excel values.
                 setText('val-fund', data.fund || '');
+                setText('val-fund-ics', data.fund || '');
                 setText('val-parno', data.icsParNo || id);
+                setText('val-ics-no', data.icsParNo || id);
                 setText('val-qty', String(data.quantity || '1'));
                 setText('val-unit', String(data.unit || 'pc'));
                 setText('val-desc', data.itemDescription || '');
@@ -356,10 +497,11 @@
                 setText('val-custodian-date', data.dateAcquired || '');
                 setText('val-ics-qty', String(data.quantity || '1'));
                 setText('val-ics-unit', String(data.unit || 'pc'));
+                setText('val-ics-ucost', data.acquisitionCost || '');
+                setText('val-ics-tcost', data.acquisitionCost || '');
                 setText('val-ics-desc', data.itemDescription || '');
-                setText('val-ics-prop', data.propertyNo || '');
-                setText('val-ics-date', data.dateAcquired || '');
-                setText('val-ics-amount', data.acquisitionCost || '');
+                setText('val-ics-item', data.propertyNo || '');
+                setText('val-ics-life', '');
                 setText('val-page-number', '');
             })
             .catch(err => console.error('Failed to load document', err));
