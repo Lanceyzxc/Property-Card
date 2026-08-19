@@ -204,9 +204,9 @@
                             <div class="sign-name" id="val-enduser"></div>
                             <div class="sign-sub">Signatue over Printed Name of End User</div>
                             <div class="sign-spacer"></div>
-                            <div class="sign-date-pos" id="val-received-date"></div>
+                            <div class="sign-date-pos" id="val-enduser-position"></div>
                             <div class="sign-date-pos">Position/Office</div>
-                            <div class="sign-spacer"></div>
+                            <div class="sign-date-pos" id="val-enduser-date"></div>
                             <div class="sign-date-pos">Date</div>
                         </div>
                     </div>
@@ -220,8 +220,8 @@
                             <div class="sign-spacer"></div>
                             <div class="sign-date-pos" id="val-custodian-position">Admin Officer V / Supply Officer III</div>
                             <div class="sign-date-pos">Position/Office</div>
-                            <div class="sign-spacer"></div>
-                            <div class="sign-date-pos" id="val-issued-date">Date</div>
+                            <div class="sign-date-pos" id="val-custodian-date"></div>
+                            <div class="sign-date-pos">Date</div>
                         </div>
                     </div>
                 </td>
@@ -290,10 +290,10 @@
                 setText('val-amount', data.acquisitionCost || '');
                 setText('val-note', data.supplier || '');
                 setText('val-enduser', data.endUserLocation || data.requestedBy || '');
+                setText('val-enduser-date', data.dateAcquired || '');
                 setText('val-custodian', 'ARSENIO A. GARCILLANOSA');
                 setText('val-custodian-position', 'Admin Officer V / Supply Officer III');
-                setText('val-received-date', data.dateAcquired || '');
-                setText('val-issued-date', data.dateAcquired || '');
+                setText('val-custodian-date', data.dateAcquired || '');
                 setText('val-page-number', '');
             })
             .catch(err => console.error('Failed to load document', err));
