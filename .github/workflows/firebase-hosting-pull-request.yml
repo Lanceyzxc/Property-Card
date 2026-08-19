@@ -16,5 +16,5 @@ jobs:
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_UCN_PROPERTY_TAG }}
-          projectId: ucn-property-tag
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_UCN_PROPERTY_TAG_B7E0A }}
+          projectId: ucn-property-tag-b7e0a
