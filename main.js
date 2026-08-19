@@ -680,15 +680,6 @@ function applyBatchAction() {
   // default no-op
 }
 
-function printSelected() {
-  const selected = getSelectedCards();
-  if (!selected || selected.length === 0) {
-    showAlert('No cards selected to print.');
-    return;
-  }
-  printCards(selected);
-}
-
 function renderEmptyDepartmentState(departmentName = 'this department') {
   const container = document.getElementById('pages-container');
   if (!container) return;

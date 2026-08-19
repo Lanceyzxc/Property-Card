@@ -418,6 +418,168 @@ body {
   border: none;
   outline: none;
 }
+
+/* Print sheet: two 3.8in by 2.07in tags on each letter portrait page. */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 0;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  body > *:not(.print-sheet) {
+    display: none !important;
+  }
+
+  .print-sheet {
+    display: block;
+  }
+
+  .print-page {
+    width: 8.5in;
+    height: 11in;
+    padding: 0.15in;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .print-tags-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 3.8in);
+    column-gap: 0.08in;
+    row-gap: 0.08in;
+    justify-content: center;
+    align-content: center;
+  }
+
+  .print-tag-card {
+    width: 3.8in;
+    height: 2.07in;
+    border: 1px solid #777;
+    background: #fff;
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-tag-top-bar {
+    height: 5px;
+    flex: 0 0 5px;
+    background: #fff;
+    border-bottom: 1px solid #333;
+  }
+
+  .print-tag-header {
+    text-align: center;
+    padding: 3px 0;
+    border-bottom: 1px solid #333;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-tag-header h1 {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.15;
+    font-weight: 900;
+    font-family: "Arial Black", Arial, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #5a6b7c;
+    -webkit-text-stroke: 1px #111;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.8), 1px 1px 0 rgba(0,0,0,1);
+  }
+
+  .print-tag-body {
+    padding: 5px 8px;
+    position: relative;
+    flex-grow: 1;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .print-tag-body::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 80%;
+    background: url("ucn.png") center / contain no-repeat;
+    opacity: 0.15;
+    z-index: -1;
+  }
+
+  .print-qr-box {
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    width: 46px;
+    height: 46px;
+    background: #fff;
+    border: 2px solid #fff;
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+    z-index: 5;
+  }
+
+  .print-qr-box img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .print-input-row {
+    display: flex;
+    align-items: flex-end;
+    font-size: 8.5px;
+    line-height: 1.15;
+    min-width: 0;
+  }
+
+  .print-input-label {
+    white-space: nowrap;
+    color: #333;
+    padding-right: 4px;
+  }
+
+  .print-input-line {
+    flex-grow: 1;
+    min-width: 0;
+    height: 9px;
+    overflow: hidden;
+    white-space: nowrap;
+    border-bottom: 0.5px solid #666;
+    color: #000;
+  }
+
+  .print-short-line {
+    margin-right: 56px;
+  }
+}
 /* NEUMORPHIC PRINT BUTTON & ANIMATIONS */
 .neu-btn-print {
   color: #333333; /* Black/Dark Gray text na ngayon */
