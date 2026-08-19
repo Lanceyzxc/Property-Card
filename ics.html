@@ -143,6 +143,9 @@
             font-size: 10px;
             margin-bottom: 3px;
         }
+        .ics-data-cell {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -157,8 +160,8 @@
             Entity Name : <strong>CAMARINES NORTE STATE COLLEGE</strong>
         </div>
         <div class="info-row cluster-line">
-            <div>Fund Cluster : <span class="underline" style="width: 180px;">&nbsp;</span></div>
-            <div>ICS No. <span class="underline" style="width: 180px;">&nbsp;</span></div>
+            <div>Fund Cluster : <span class="underline" style="width: 180px;"><strong id="val-fund"></strong></span></div>
+            <div>ICS No. <span class="underline" style="width: 180px;"><strong id="val-ics-no"></strong></span></div>
         </div>
     </div>
 
@@ -179,7 +182,15 @@
         </thead>
         <tbody>
             <!-- Creating 23 empty rows to perfectly match the grid layout height -->
-            <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr>
+                <td id="val-ics-qty" class="ics-data-cell">&nbsp;</td>
+                <td id="val-ics-unit" class="ics-data-cell">&nbsp;</td>
+                <td id="val-ics-ucost" class="ics-data-cell">&nbsp;</td>
+                <td id="val-ics-tcost" class="ics-data-cell">&nbsp;</td>
+                <td id="val-ics-desc" class="ics-data-cell">&nbsp;</td>
+                <td id="val-ics-item" class="ics-data-cell">&nbsp;</td>
+                <td id="val-ics-life" class="ics-data-cell">&nbsp;</td>
+            </tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
@@ -234,3 +245,65 @@
 
 </body>
 </html>
+
+<!-- Firestore data binding for QR viewer -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA1q2b0fyIidVRspGg31_xF_vpOu8dYRug",
+      authDomain: "ucn-property-tag-b7e0a.firebaseapp.com",
+      projectId: "ucn-property-tag-b7e0a",
+      storageBucket: "ucn-property-tag-b7e0a.firebasestorage.app",
+      messagingSenderId: "252936858515",
+      appId: "1:252936858515:web:3026ba3bfdb080949ad666",
+      measurementId: "G-TSRG9YCCHN"
+    };
+
+    if (window.firebase && firebase.initializeApp) {
+        try { firebase.initializeApp(firebaseConfig); } catch (e) { /* already initialized */ }
+    }
+
+    const db = firebase.firestore ? firebase.firestore() : null;
+
+    function setText(id, value) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerText = value || '';
+    }
+
+    (function populateFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get('id');
+        if (!id) return;
+
+        if (!db) {
+            console.warn('Firestore not available');
+            return;
+        }
+
+        db.collection('propertyTags').doc(id).get()
+            .then(doc => {
+                if (!doc.exists) {
+                    console.warn('No document for id', id);
+                    return;
+                }
+
+                const data = doc.data();
+                const qty = String(data.quantity || '1');
+                const unit = String(data.unit || 'pc');
+                const amount = data.acquisitionCost || '';
+
+                setText('val-fund', data.fund || '');
+                setText('val-ics-no', data.icsParNo || id);
+                setText('val-ics-qty', qty);
+                setText('val-ics-unit', unit);
+                setText('val-ics-ucost', amount);
+                setText('val-ics-tcost', amount);
+                setText('val-ics-desc', data.itemDescription || '');
+                setText('val-ics-item', data.propertyNo || '');
+                setText('val-ics-life', '');
+            })
+            .catch(err => console.error('Failed to load document', err));
+    })();
+</script>
