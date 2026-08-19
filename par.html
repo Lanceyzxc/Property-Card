@@ -175,14 +175,6 @@
                 <td class="col-date" id="val-date"></td>
                 <td class="col-amount" id="val-amount"></td>
             </tr>
-            <tr>
-                <td></td><td></td><td class="col-desc">Serial Number:</td><td></td><td></td><td></td>
-            </tr>
-            <tr><td></td><td></td><td class="col-desc">1.)</td><td></td><td></td><td></td></tr>
-            <tr><td></td><td></td><td class="col-desc">2.)</td><td></td><td></td><td></td></tr>
-            <tr><td></td><td></td><td class="col-desc">3.)</td><td></td><td></td><td></td></tr>
-            <tr><td></td><td></td><td class="col-desc">4.)</td><td></td><td></td><td></td></tr>
-            <tr><td></td><td></td><td class="col-desc">5.)</td><td></td><td></td><td></td></tr>
             <!-- Empty Rows for grid effect -->
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
@@ -192,7 +184,7 @@
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr>
                 <td></td><td></td>
-                <td class="col-desc">Note: Previously Issued to Maam Nora<br>Macasinag during her time as CBPA Dean</td>
+                <td class="col-desc">Supplier: <span id="val-note"></span></td>
                 <td></td><td></td><td></td>
             </tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
@@ -209,10 +201,10 @@
                     <div class="footer-content">
                         <div class="sign-label">Received by:</div>
                         <div class="sign-details">
-                            <div class="sign-name" id="val-enduser">GEHANA D. LAMUG,DBA</div>
+                            <div class="sign-name" id="val-enduser"></div>
                             <div class="sign-sub">Signatue over Printed Name of End User</div>
                             <div class="sign-spacer"></div>
-                            <div class="sign-date-pos">11/3/2025</div>
+                            <div class="sign-date-pos"></div>
                             <div class="sign-date-pos">Position/Office</div>
                             <div class="sign-spacer"></div>
                             <div class="sign-date-pos">Date</div>
@@ -223,10 +215,10 @@
                     <div class="footer-content">
                         <div class="sign-label">Issued by:</div>
                         <div class="sign-details">
-                            <div class="sign-name">ARSENIO GEM A. GARCILLANOSA</div>
+                            <div class="sign-name" id="val-custodian"></div>
                             <div class="sign-sub">Signatue over Printed Name of Supply and/or<br>Property Custodian</div>
                             <div class="sign-spacer"></div>
-                            <div class="sign-date-pos">11/3/2025</div>
+                            <div class="sign-date-pos"></div>
                             <div class="sign-date-pos">Position/Office</div>
                             <div class="sign-spacer"></div>
                             <div class="sign-date-pos">Date</div>
@@ -237,7 +229,7 @@
         </tfoot>
     </table>
 
-    <div class="page-number">173</div>
+    <div class="page-number" id="val-page-number"></div>
 </div>
 
 </body>
@@ -249,14 +241,14 @@
 <script>
     // Firebase config (same as main app)
     const firebaseConfig = {
-        apiKey: "AIzaSyBRLFZq8U2ZNrHeJ4hatv-Di-24AWGzE4s",
-        authDomain: "ucn-property-tag-cc45e.firebaseapp.com",
-        projectId: "ucn-property-tag-cc45e",
-        storageBucket: "ucn-property-tag-cc45e.firebasestorage.app",
-        messagingSenderId: "91020185928",
-        appId: "1:91020185928:web:14a3b495613b938a22637d",
-        measurementId: "G-NXK5BSZ6M9"
-    };
+  apiKey: "AIzaSyA1q2b0fyIidVRspGg31_xF_vpOu8dYRug",
+  authDomain: "ucn-property-tag-b7e0a.firebaseapp.com",
+  projectId: "ucn-property-tag-b7e0a",
+  storageBucket: "ucn-property-tag-b7e0a.firebasestorage.app",
+  messagingSenderId: "252936858515",
+  appId: "1:252936858515:web:3026ba3bfdb080949ad666",
+  measurementId: "G-TSRG9YCCHN"
+};
 
     if (window.firebase && firebase.initializeApp) {
         try { firebase.initializeApp(firebaseConfig); } catch (e) { /* already initialized */ }
@@ -287,17 +279,19 @@
                     return;
                 }
                 const data = doc.data();
-                // ENHANCED: Map ALL important fields from Excel headers via Firestore
-                // This ensures the PAR form receives complete data from Excel without blanks
-                setText('val-fund', data.fund || '');                                    // Fund
-                setText('val-parno', data.icsParNo || id);                              // ICS/PAR No
-                setText('val-qty', String(data.quantity || '1'));                       // Quantity from Excel
-                setText('val-unit', String(data.unit || 'pc'));                         // Unit of Measurement from Excel
-                setText('val-desc', data.itemDescription || '');                        // Full Item Description
-                setText('val-prop', data.propertyNo || '');                             // Property Number
-                setText('val-date', data.dateAcquired || '');                           // Date Acquired
-                setText('val-amount', data.acquisitionCost || '');                      // Acquisition Cost/Amount
-                setText('val-enduser', data.endUserLocation || data.requestedBy || ''); // End User Location
+                // Map all important fields from Firestore, including imported Excel values.
+                setText('val-fund', data.fund || '');
+                setText('val-parno', data.icsParNo || id);
+                setText('val-qty', String(data.quantity || '1'));
+                setText('val-unit', String(data.unit || 'pc'));
+                setText('val-desc', data.itemDescription || '');
+                setText('val-prop', data.propertyNo || '');
+                setText('val-date', data.dateAcquired || '');
+                setText('val-amount', data.acquisitionCost || '');
+                setText('val-note', data.supplier || '');
+                setText('val-enduser', data.endUserLocation || data.requestedBy || '');
+                setText('val-custodian', '');
+                setText('val-page-number', '');
             })
             .catch(err => console.error('Failed to load document', err));
     })();

@@ -234,6 +234,7 @@ body {
 }
 
 .main-content {
+  position: relative;
   flex-grow: 1;
   overflow-y: auto;
   padding: 40px;
@@ -417,6 +418,168 @@ body {
   border: none;
   outline: none;
 }
+
+/* Print sheet: two 3.8in by 2.07in tags on each letter portrait page. */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 0;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  body > *:not(.print-sheet) {
+    display: none !important;
+  }
+
+  .print-sheet {
+    display: block;
+  }
+
+  .print-page {
+    width: 8.5in;
+    height: 11in;
+    padding: 0.15in;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .print-tags-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 3.8in);
+    column-gap: 0.08in;
+    row-gap: 0.08in;
+    justify-content: center;
+    align-content: center;
+  }
+
+  .print-tag-card {
+    width: 3.8in;
+    height: 2.07in;
+    border: 1px solid #777;
+    background: #fff;
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-tag-top-bar {
+    height: 5px;
+    flex: 0 0 5px;
+    background: #fff;
+    border-bottom: 1px solid #333;
+  }
+
+  .print-tag-header {
+    text-align: center;
+    padding: 3px 0;
+    border-bottom: 1px solid #333;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-tag-header h1 {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.15;
+    font-weight: 900;
+    font-family: "Arial Black", Arial, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #5a6b7c;
+    -webkit-text-stroke: 1px #111;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.8), 1px 1px 0 rgba(0,0,0,1);
+  }
+
+  .print-tag-body {
+    padding: 5px 8px;
+    position: relative;
+    flex-grow: 1;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .print-tag-body::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 80%;
+    background: url("ucn.png") center / contain no-repeat;
+    opacity: 0.15;
+    z-index: -1;
+  }
+
+  .print-qr-box {
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    width: 46px;
+    height: 46px;
+    background: #fff;
+    border: 2px solid #fff;
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+    z-index: 5;
+  }
+
+  .print-qr-box img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .print-input-row {
+    display: flex;
+    align-items: flex-end;
+    font-size: 8.5px;
+    line-height: 1.15;
+    min-width: 0;
+  }
+
+  .print-input-label {
+    white-space: nowrap;
+    color: #333;
+    padding-right: 4px;
+  }
+
+  .print-input-line {
+    flex-grow: 1;
+    min-width: 0;
+    height: 9px;
+    overflow: hidden;
+    white-space: nowrap;
+    border-bottom: 0.5px solid #666;
+    color: #000;
+  }
+
+  .print-short-line {
+    margin-right: 56px;
+  }
+}
 /* NEUMORPHIC PRINT BUTTON & ANIMATIONS */
 .neu-btn-print {
   color: #333333; /* Black/Dark Gray text na ngayon */
@@ -503,8 +666,137 @@ body {
   padding: 20px;
 }
 
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(213, 213, 213, 0.34);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 28px;
+  z-index: 5;
+}
+
+.empty-state-backdrop {
+  position: absolute;
+  inset: 0;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.empty-state-panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 28px 32px;
+  border-radius: 22px;
+  background: rgba(224, 224, 224, 0.88);
+  box-shadow: 10px 10px 22px rgba(0,0,0,0.09), -10px -10px 22px rgba(255,255,255,0.9);
+  width: min(500px, 88%);
+  text-align: center;
+}
+
+.empty-state-message {
+  font-size: clamp(19px, 2vw, 28px);
+  font-weight: 800;
+  color: #3a3a3a;
+  letter-spacing: 0.8px;
+  text-align: center;
+  margin: 0;
+}
+
+.empty-state-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.empty-state-btn {
+  min-width: 120px;
+  justify-content: center;
+}
+
+.empty-state-btn.secondary {
+  background: rgba(255,255,255,0.18);
+  box-shadow: 6px 6px 12px rgba(0,0,0,0.06), -6px -6px 12px rgba(255,255,255,0.8);
+}
+
 .modal-overlay.hidden {
   display: none;
+}
+
+.delete-loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(224, 224, 224, 0.28);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 210;
+  padding: 20px;
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.2s ease;
+}
+
+.delete-loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  display: none;
+}
+
+.delete-loading-card {
+  width: min(330px, 84vw);
+  background: var(--bg-color);
+  border-radius: 24px;
+  padding: 28px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 14px 14px 28px var(--neumorphic-dark), -14px -14px 28px var(--neumorphic-light);
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 5px solid rgba(0, 74, 173, 0.18);
+  border-top-color: #004aad;
+  box-shadow: inset 5px 5px 10px rgba(255,255,255,0.9), inset -5px -5px 10px rgba(0,0,0,0.06);
+  animation: spin 1s linear infinite;
+}
+
+.delete-loading-title {
+  font-weight: 900;
+  color: #1f1f1f;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  font-size: 15px;
+}
+
+.delete-loading-subtitle {
+  color: #4d4d4d;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+body.delete-loading .main-content {
+  filter: blur(4px) saturate(0.9);
+  transition: filter 0.2s ease;
 }
 
 .modal-window {
