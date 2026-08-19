@@ -129,6 +129,41 @@
         .sign-spacer {
             flex-grow: 1;
         }
+        .ics-preview {
+            margin-top: 24px;
+            page-break-inside: avoid;
+        }
+        .ics-preview-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        .ics-preview .ics-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000;
+            table-layout: fixed;
+        }
+        .ics-preview .ics-table th,
+        .ics-preview .ics-table td {
+            border: 1px solid #000;
+            padding: 6px 4px;
+            text-align: center;
+            vertical-align: top;
+            height: 28px;
+        }
+        .ics-preview .ics-table th {
+            font-weight: bold;
+            background: #f2f2f2;
+        }
+        .ics-preview .ics-table .col-qty { width: 10%; }
+        .ics-preview .ics-table .col-unit { width: 10%; }
+        .ics-preview .ics-table .col-desc { width: 38%; text-align: left; }
+        .ics-preview .ics-table .col-prop { width: 18%; }
+        .ics-preview .ics-table .col-date { width: 12%; }
+        .ics-preview .ics-table .col-amount { width: 12%; text-align: right; }
         /* Page Number */
         .page-number {
             text-align: center;
@@ -228,6 +263,32 @@
         </tfoot>
     </table>
 
+    <div class="ics-preview">
+        <div class="ics-preview-title">INVENTORY CUSTODIAN SLIP</div>
+        <table class="ics-table">
+            <thead>
+                <tr>
+                    <th class="col-qty">Quantity</th>
+                    <th class="col-unit">Unit</th>
+                    <th class="col-desc">Description</th>
+                    <th class="col-prop">Property No.</th>
+                    <th class="col-date">Date Acquired</th>
+                    <th class="col-amount">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td id="val-ics-qty">&nbsp;</td>
+                    <td id="val-ics-unit">&nbsp;</td>
+                    <td id="val-ics-desc" class="col-desc">&nbsp;</td>
+                    <td id="val-ics-prop">&nbsp;</td>
+                    <td id="val-ics-date">&nbsp;</td>
+                    <td id="val-ics-amount" class="col-amount">&nbsp;</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
     <div class="page-number" id="val-page-number"></div>
 </div>
 
@@ -293,6 +354,12 @@
                 setText('val-custodian', 'ARSENIO A. GARCILLANOSA');
                 setText('val-custodian-position', 'Admin Officer V / Supply Officer III');
                 setText('val-custodian-date', data.dateAcquired || '');
+                setText('val-ics-qty', String(data.quantity || '1'));
+                setText('val-ics-unit', String(data.unit || 'pc'));
+                setText('val-ics-desc', data.itemDescription || '');
+                setText('val-ics-prop', data.propertyNo || '');
+                setText('val-ics-date', data.dateAcquired || '');
+                setText('val-ics-amount', data.acquisitionCost || '');
                 setText('val-page-number', '');
             })
             .catch(err => console.error('Failed to load document', err));
