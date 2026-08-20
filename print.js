@@ -19,7 +19,6 @@ function printCards(cardsToPrint) {
   document.querySelector('.print-sheet')?.remove();
   const printSheet = document.createElement('div');
   printSheet.className = 'print-sheet';
-  const colors = ['#8c0000', '#9366ff', '#2cb3f2', '#737373', '#0044b3', '#ff7700', '#fff200', '#4ba64b', '#ffcc33', '#ff2626'];
 
   cards.forEach((cardWrapper, index) => {
     if (index % 10 === 0) {
@@ -46,8 +45,9 @@ function printCards(cardsToPrint) {
     card.className = 'print-tag-card';
     card.innerHTML = `
       <div class="print-tag-top-bar"></div>
-      <div class="print-tag-header" style="background-color: ${colors[index % colors.length]}"><h1>UCN PROPERTY TAG</h1></div>
+      <div class="print-tag-header"><h1>UCN PROPERTY TAG</h1></div>
       <div class="print-tag-body"><div class="print-qr-box"></div></div>`;
+    card.querySelector('.print-tag-header').style.backgroundColor = data.color || '#ffffff';
 
     const body = card.querySelector('.print-tag-body');
     inputs.forEach(([label, value, shortLine]) => {
