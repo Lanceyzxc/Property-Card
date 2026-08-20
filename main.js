@@ -163,6 +163,13 @@ function getCardData(cardWrapper) {
   };
 }
 
+function getFormPath(propertyNo) {
+  const normalizedPropertyNo = String(propertyNo || '').toUpperCase();
+  return normalizedPropertyNo.includes('SPLV') || normalizedPropertyNo.includes('SPHV')
+    ? 'ics.html'
+    : 'par.html';
+}
+
 function saveCardToFirebase(cardWrapper) {
   if (!firebaseInitialized || !firebaseFirestore) return;
   if (!cardWrapper) return;
@@ -176,7 +183,7 @@ function saveCardToFirebase(cardWrapper) {
   // Persist a short QR URL using the current origin (auto-regenerated)
   try {
     const baseToUse = window.location.origin;
-    data.qrUrl = `${baseToUse.replace(/\/$/, '')}/par.html?id=${encodeURIComponent(cardId)}`;
+    data.qrUrl = `${baseToUse.replace(/\/$/, '')}/${getFormPath(data.propertyNo)}?id=${encodeURIComponent(cardId)}`;
   } catch (e) {
     data.qrUrl = '';
   }
@@ -279,13 +286,8 @@ function collectCardPayload(cardWrapper) {
     unit: data.unit || 'pc'
   };
   if (data.cardId) {
-    // Prefer an already-saved qrUrl (will be set when saved), otherwise build one
-    if (data.qrUrl) {
-      payload.url = data.qrUrl;
-    } else {
-      const baseToUse = window.location.origin;
-      payload.url = `${baseToUse.replace(/\/$/, '')}/par.html?id=${encodeURIComponent(data.cardId)}`;
-    }
+    const baseToUse = window.location.origin;
+    payload.url = `${baseToUse.replace(/\/$/, '')}/${getFormPath(data.propertyNo)}?id=${encodeURIComponent(data.cardId)}`;
   }
   return payload;
 }
