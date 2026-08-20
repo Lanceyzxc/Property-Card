@@ -215,10 +215,7 @@ function setupFirebaseAutoSave(cardWrapper) {
         cardWrapper.dataset.itemDescriptionRaw = input.value;
       }
       saveOnChange();
-      if (input.tagName === 'TEXTAREA') {
-        // Regenerate QR on text change so print preview stays current
-        renderCardQRCode(cardWrapper);
-      }
+      renderCardQRCode(cardWrapper);
     });
     input.addEventListener('change', () => {
       if (input.classList.contains('auto-resize')) {
@@ -476,6 +473,7 @@ function createSingleCard(initColor, cardData = null) {
   }
 
   setupFirebaseAutoSave(newCard);
+  renderCardQRCode(newCard);
   // Attach auto-resize behavior to any textarea inside the new card
   const textareas = newCard.querySelectorAll('textarea.auto-resize');
   textareas.forEach((ta) => {
