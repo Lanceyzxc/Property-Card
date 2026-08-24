@@ -430,7 +430,7 @@ function createSingleCard(initColor, cardData = null) {
   newCard.dataset.cardId = cardData && cardData.cardId ? cardData.cardId : `card-${currentIndex}`;
   allCards.push(newCard);
 
-  // Render QR code for the new card immediately
+  // Render QR code for the new card immediatel
   renderCardQRCode(newCard);
 
   // Card click toggles selection when selection-mode is active

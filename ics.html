@@ -134,6 +134,9 @@
             border-bottom: 1px solid #000;
             width: 70%;
             margin-bottom: 3px;
+            font-size: 9px;
+            font-weight: bold;
+            white-space: nowrap;
         }
         .sign-sub {
             font-size: 10px;
@@ -220,10 +223,10 @@
                     <div class="footer-content">
                         <div class="sign-label">Received from :</div>
                         <div class="sign-details">
-                            <div class="sign-line"></div>
+                            <div class="sign-line">ARSENIO GEM A. GARCILLANOSA</div>
                             <div class="sign-sub">Signature Over Printed Name</div>
-                            <div class="sign-date-pos">Position/Office</div>
-                            <div class="sign-date-pos">Date</div>
+                            <div class="sign-date-pos">Admin Officer V / Supply Officer III</div>
+                            <div id="val-received-from-date" class="sign-date-pos"></div>
                         </div>
                     </div>
                 </td>
@@ -293,16 +296,24 @@
                 const qty = String(data.quantity || '1');
                 const unit = String(data.unit || 'pc');
                 const amount = data.acquisitionCost || '';
+                const quantityNumber = String(qty).replace(/[^0-9.-]+/g, '');
+                const unitCostNumber = String(amount).replace(/[^0-9.-]+/g, '');
+                const quantityValue = quantityNumber ? Number(quantityNumber) : NaN;
+                const unitCostValue = unitCostNumber ? Number(unitCostNumber) : NaN;
+                const totalCost = Number.isFinite(quantityValue) && Number.isFinite(unitCostValue)
+                    ? (quantityValue * unitCostValue).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })
+                    : '';
 
                 setText('val-fund', data.fund || '');
                 setText('val-ics-no', data.icsParNo || id);
                 setText('val-ics-qty', qty);
                 setText('val-ics-unit', unit);
                 setText('val-ics-ucost', amount);
-                setText('val-ics-tcost', amount);
+                setText('val-ics-tcost', totalCost);
                 setText('val-ics-desc', data.itemDescription || '');
                 setText('val-ics-item', data.propertyNo || '');
                 setText('val-ics-life', '');
+                setText('val-received-from-date', data.dateAcquired || '');
             })
             .catch(err => console.error('Failed to load document', err));
     })();
