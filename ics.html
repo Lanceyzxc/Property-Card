@@ -234,10 +234,10 @@
                     <div class="footer-content">
                         <div class="sign-label">Received by:</div>
                         <div class="sign-details">
-                            <div class="sign-line"></div>
+                            <div id="val-received-by-name" class="sign-line"></div>
                             <div class="sign-sub">Signature Over Printed Name</div>
                             <div class="sign-date-pos">Position/Office</div>
-                            <div class="sign-date-pos">Date</div>
+                            <div id="val-received-by-date" class="sign-date-pos"></div>
                         </div>
                     </div>
                 </td>
@@ -314,6 +314,8 @@
                 setText('val-ics-item', data.propertyNo || '');
                 setText('val-ics-life', '');
                 setText('val-received-from-date', data.dateAcquired || '');
+                setText('val-received-by-name', data.requestedBy || '');
+                setText('val-received-by-date', data.dateAcquired || '');
             })
             .catch(err => console.error('Failed to load document', err));
     })();
