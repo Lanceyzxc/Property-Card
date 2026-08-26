@@ -5,7 +5,7 @@
 <title>UCN ProCard System</title>
 <!-- Add SheetJS Library to parse Excel Files in the browser -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=20260812.1">
+<link rel="stylesheet" href="styles.css?v=20260826.4">
 <link rel="icon" href="ucn.png" type="image/x-icon">
 </meta>
 <body>
@@ -13,6 +13,7 @@
 <aside class="sidebar">
   <div class="sidebar-header">
     <h2>SUPPLY & PROPERTY MANAGEMENT OFFICE</h2>
+    <p>Property Tag</p>
   </div>
 
   <div class="dashboard-summary" id="dashboard-summary">
@@ -59,6 +60,13 @@
     </div>
   </div>
 
+  <div class="control-group">
+    <label>Inventory</label>
+    <button class="neu-btn" type="button" onclick="window.location.href='inventory.html'">
+      Open Inventory Tags
+    </button>
+  </div>
+
   <!-- Sidebar footer (anchored at bottom) -->
   <div class="sidebar-footer">
     <button class="neu-btn neu-btn-print" onclick="printCards()">
@@ -78,8 +86,9 @@
 
 </aside>
 
-<main class="main-content" id="pages-container">
-  <!-- Page wrappers and cards will be dynamically injected here to preserve input state -->
+<main class="main-content is-loading" id="pages-container" aria-busy="true">
+  <div class="main-loading-card" aria-hidden="true"><span></span><span></span><span></span></div>
+  <div class="main-loading-card" aria-hidden="true"><span></span><span></span><span></span></div>
 </main>
 
 <div class="add-card-floating">
@@ -136,6 +145,17 @@
   </div>
 </div>
 
+<div class="field-theme-floating">
+  <button class="theme-fab" id="theme-fab" onclick="toggleFieldThemePanel()" aria-label="Open field color theme" title="Field Color Theme">C</button>
+  <div class="theme-panel" id="theme-panel">
+    <label for="field-color-mode">Field Text Color</label>
+    <select id="field-color-mode" class="neu-select">
+      <option value="enhanced">Enhanced (colored labels)</option>
+      <option value="plain">Plain (regular colors)</option>
+    </select>
+  </div>
+</div>
+
 <!-- App modal for confirmations and alerts -->
 <div id="app-modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
   <div class="modal-window">
@@ -175,7 +195,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="main.js?v=20260812.1"></script>
-<script src="print.js?v=20260812.1"></script>
+<script src="main.js?v=20260826.2"></script>
+<script src="print.js?v=20260826.2"></script>
 </body>
 </html>

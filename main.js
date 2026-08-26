@@ -25,6 +25,27 @@ let uniqueCardId = 0;
 let allCards = [];
 let firebaseFirestore = null;
 let firebaseInitialized = false;
+let deferCardQrRendering = false;
+
+function finishMainLoading() {
+  const container = document.getElementById('pages-container');
+  if (!container) return;
+  container.classList.remove('is-loading');
+  container.setAttribute('aria-busy', 'false');
+}
+
+function renderLoadedCardQRCodes() {
+  let position = 0;
+  const cards = [...allCards];
+
+  function renderNextBatch() {
+    const batchEnd = Math.min(position + 8, cards.length);
+    for (; position < batchEnd; position += 1) renderCardQRCode(cards[position]);
+    if (position < cards.length) window.requestAnimationFrame(renderNextBatch);
+  }
+
+  window.requestAnimationFrame(renderNextBatch);
+}
 
 const firebaseConfig = {
   apiKey: "AIzaSyA1q2b0fyIidVRspGg31_xF_vpOu8dYRug",
@@ -149,6 +170,10 @@ function getCardData(cardWrapper) {
     unit: unit || 'pc',
     icsParNo: inputs[0] ? inputs[0].value.trim() : '',
     propertyNo: inputs[1] ? inputs[1].value.trim() : '',
+    serialNo: cardWrapper.dataset.serialNo || '',
+    serviceable: cardWrapper.dataset.serviceable || '',
+    unserviceable: cardWrapper.dataset.unserviceable || '',
+    dateCounted: cardWrapper.dataset.dateCounted || '',
     dateAcquired: inputs[2] ? inputs[2].value.trim() : '',
     acquisitionCost: inputs[3] ? inputs[3].value.trim() : '',
     fund: inputs[4] ? inputs[4].value.trim() : '',
@@ -430,8 +455,7 @@ function createSingleCard(initColor, cardData = null) {
   newCard.dataset.cardId = cardData && cardData.cardId ? cardData.cardId : `card-${currentIndex}`;
   allCards.push(newCard);
 
-  // Render QR code for the new card immediatel
-  renderCardQRCode(newCard);
+  if (!deferCardQrRendering) renderCardQRCode(newCard);
 
   // Card click toggles selection when selection-mode is active
   newCard.addEventListener('click', function(e) {
@@ -473,7 +497,7 @@ function createSingleCard(initColor, cardData = null) {
   }
 
   setupFirebaseAutoSave(newCard);
-  renderCardQRCode(newCard);
+  if (!deferCardQrRendering) renderCardQRCode(newCard);
   // Attach auto-resize behavior to any textarea inside the new card
   const textareas = newCard.querySelectorAll('textarea.auto-resize');
   textareas.forEach((ta) => {
@@ -742,6 +766,20 @@ function updateCardColor(selectElement, index) {
   banner.style.backgroundColor = selectElement.value;
 }
 
+function applyFieldColorMode(mode) {
+  const mainContent = document.getElementById('pages-container');
+  if (!mainContent) return;
+  mainContent.classList.toggle('field-color-plain', mode === 'plain');
+}
+
+function toggleFieldThemePanel() {
+  document.querySelector('.field-theme-floating')?.classList.toggle('open');
+}
+
+function closeFieldThemePanel() {
+  document.querySelector('.field-theme-floating')?.classList.remove('open');
+}
+
 async function loadCardsFromFirestore() {
   if (!firebaseInitialized || !firebaseFirestore) return false;
   updateFirebaseStatus("Loading saved cards...", "#004aad");
@@ -749,6 +787,7 @@ async function loadCardsFromFirestore() {
   try {
     const snapshot = await firebaseFirestore.collection('propertyTags').get();
     if (snapshot.empty) {
+      finishMainLoading();
       updateFirebaseStatus("No saved cards found. Starting fresh.", "#004aad");
       return false;
     }
@@ -757,6 +796,7 @@ async function loadCardsFromFirestore() {
     totalCardCount = 0;
     uniqueCardId = 0;
     allCards = [];
+    deferCardQrRendering = true;
 
     snapshot.forEach((doc) => {
       const cardData = doc.data();
@@ -767,9 +807,15 @@ async function loadCardsFromFirestore() {
       createSingleCard(color, cardData);
     });
 
+    deferCardQrRendering = false;
+    finishMainLoading();
+    renderLoadedCardQRCodes();
+
     updateFirebaseStatus(`Loaded ${snapshot.size} saved cards.`, "#499632");
     return true;
   } catch (err) {
+    deferCardQrRendering = false;
+    finishMainLoading();
     console.error('Firestore load error', err);
     updateFirebaseStatus("Unable to load saved cards", "#9a0603");
     return false;
@@ -782,6 +828,7 @@ window.onload = async function() {
   const loaded = await loadCardsFromFirestore();
   if (!loaded) {
     addCards(10);
+    finishMainLoading();
   }
   buildFilterOptions();
   // Wire up filter UI
@@ -789,6 +836,18 @@ window.onload = async function() {
   const searchInput = document.getElementById('search-query');
   const addPanel = document.getElementById('add-panel');
   const addFab = document.getElementById('add-fab');
+  const fieldColorMode = document.getElementById('field-color-mode');
+  const themePanel = document.getElementById('theme-panel');
+  const themeFab = document.getElementById('theme-fab');
+  if (fieldColorMode) {
+    const savedMode = localStorage.getItem('fieldColorMode') || 'enhanced';
+    fieldColorMode.value = savedMode;
+    applyFieldColorMode(savedMode);
+    fieldColorMode.addEventListener('change', () => {
+      applyFieldColorMode(fieldColorMode.value);
+      localStorage.setItem('fieldColorMode', fieldColorMode.value);
+    });
+  }
   document.getElementById('reset-filter').addEventListener('click', () => {
     filterSelect.value = 'ALL';
     searchInput.value = '';
@@ -840,6 +899,8 @@ window.onload = async function() {
     const clickedAddFab = addFab && addFab.contains(target);
     const clickedInsideSelect = selectPanel && selectPanel.contains(target);
     const clickedSelectFab = selectFab && selectFab.contains(target);
+    const clickedInsideTheme = themePanel && themePanel.contains(target);
+    const clickedThemeFab = themeFab && themeFab.contains(target);
 
     if (!clickedInsideAdd && !clickedAddFab) {
       closeAddPanel();
@@ -848,12 +909,16 @@ window.onload = async function() {
       closeSelectPanel();
       setSelectionMode(false);
     }
+    if (!clickedInsideTheme && !clickedThemeFab) {
+      closeFieldThemePanel();
+    }
   });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeAddPanel();
       closeSelectPanel();
+      closeFieldThemePanel();
       setSelectionMode(false);
     }
   });
@@ -1036,6 +1101,10 @@ function populateFromExcel(dataRows) {
       'Contract Reference'
     ]);
     const propertyNoFromRow = getPreferredExcelValue(row, ['Property No.', 'Property No./Item No.', 'Item No.', 'Asset No.']);
+    const serialNoFromRow = getPreferredExcelValue(row, ['Serial No.', 'Serial Number', 'Serial']);
+    const serviceableFromRow = getPreferredExcelValue(row, ['Serviceable', 'Condition']);
+    const unserviceableFromRow = getPreferredExcelValue(row, ['Unserviceable']);
+    const dateCountedFromRow = getPreferredExcelValue(row, ['Date Counted', 'Counted Date']);
     const dateFromRow = getPreferredExcelValue(row, ['Date Acquired', 'Date Delivered', 'Date of Acquisition', 'Acquired Date']);
     const fundFromRow = getPreferredExcelValue(row, ['Fund', 'Fund Cluster']);
     const endUserFromRow = getPreferredExcelValue(row, ['End-User/Location', 'End User', 'End-User', 'Location', 'User/Location']);
@@ -1050,6 +1119,10 @@ function populateFromExcel(dataRows) {
     newCard.dataset.reference = referenceFromRow;
     newCard.dataset.referenceRaw = referenceFromRow;
     newCard.dataset.propertyNo = propertyNoFromRow;
+    newCard.dataset.serialNo = serialNoFromRow;
+    newCard.dataset.serviceable = serviceableFromRow;
+    newCard.dataset.unserviceable = unserviceableFromRow;
+    newCard.dataset.dateCounted = dateCountedFromRow;
     newCard.dataset.dateAcquired = dateFromRow;
     newCard.dataset.fund = fundFromRow;
     newCard.dataset.endUserLocation = endUserFromRow;

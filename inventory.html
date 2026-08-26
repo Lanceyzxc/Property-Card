@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Tags | UCN ProCard System</title>
+  <link rel="stylesheet" href="inventory.css?v=20260826.1">
+  <link rel="icon" href="ucn.png" type="image/x-icon">
+</head>
+<body>
+  <aside class="inventory-sidebar">
+    <div class="sidebar-header">
+      <h1>SUPPLY &amp; PROPERTY MANAGEMENT OFFICE</h1>
+      <p>Inventory Tag</p>
+    </div>
+
+    <div class="inventory-summary">
+      <span>Total Tags</span>
+      <strong id="inventory-count">0</strong>
+    </div>
+
+    <div class="control-group">
+      <label for="inventory-search">Search tags</label>
+      <input id="inventory-search" class="inventory-input" type="search" placeholder="Property no. or article">
+    </div>
+
+    <div class="control-group">
+      <label for="inventory-department">Department</label>
+      <select id="inventory-department" class="inventory-input">
+        <option value="ALL">All Departments</option>
+      </select>
+    </div>
+
+    <div class="sidebar-navigation">
+      <button class="inventory-button" type="button" onclick="window.location.href='index.html'">Property Cards</button>
+    </div>
+
+    <div class="sidebar-actions">
+      <button class="inventory-button primary" id="print-inventory" type="button">Print All Tags</button>
+      <button class="inventory-button" id="print-selected" type="button">Print Selected</button>
+    </div>
+    <div id="inventory-status" class="inventory-status" aria-live="polite">Loading inventory tags...</div>
+  </aside>
+
+  <main class="inventory-main">
+    <header class="inventory-toolbar">
+      <div>
+        <span class="eyebrow">Government property records</span>
+        <h2>Inventory Tags</h2>
+      </div>
+      <button class="select-all-button" id="select-all" type="button">Select All</button>
+    </header>
+    <section id="inventory-grid" class="inventory-grid is-loading" aria-live="polite" aria-busy="true">
+      <div class="inventory-loading-card" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="inventory-loading-card" aria-hidden="true"><span></span><span></span><span></span></div>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="inventory.js?v=20260824.1"></script>
+</body>
+</html>

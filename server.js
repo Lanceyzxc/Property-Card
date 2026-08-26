@@ -21,7 +21,8 @@ const mimeTypes = {
 
 function createServer() {
   return http.createServer((req, res) => {
-    let requestPath = req.url === '/' ? '/index.html' : req.url;
+    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    let requestPath = parsedUrl.pathname === '/' ? '/index.html' : parsedUrl.pathname;
     requestPath = decodeURIComponent(requestPath);
 
     const safePath = path.normalize(requestPath).replace(/^\/+/, '');

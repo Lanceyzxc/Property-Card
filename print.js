@@ -19,6 +19,8 @@ function printCards(cardsToPrint) {
   document.querySelector('.print-sheet')?.remove();
   const printSheet = document.createElement('div');
   printSheet.className = 'print-sheet';
+  const fieldColorMode = localStorage.getItem('fieldColorMode') || 'enhanced';
+  printSheet.classList.toggle('field-color-plain', fieldColorMode === 'plain');
 
   cards.forEach((cardWrapper, index) => {
     if (index % 10 === 0) {
@@ -37,7 +39,7 @@ function printCards(cardsToPrint) {
       ['Fund:', data.fund, false],
       ['End-User/Location:', data.endUserLocation, false],
       ['Requested by:', data.requestedBy, false],
-      ['', data.supplier, false],
+      ['Supplier:', data.supplier, false],
       ['P.O/J.O/Contract Ref:', data.reference, false],
       ['Item Description:', data.itemDescription, false]
     ];
