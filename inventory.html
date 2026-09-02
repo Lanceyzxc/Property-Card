@@ -8,43 +8,52 @@
   <link rel="icon" href="ucn.png" type="image/x-icon">
 </head>
 <body>
-  <aside class="inventory-sidebar">
+  <aside class="sidebar inventory-sidebar">
     <div class="sidebar-header">
-      <h1>SUPPLY &amp; PROPERTY MANAGEMENT OFFICE</h1>
+      <h2>SUPPLY &amp; PROPERTY MANAGEMENT OFFICE</h2>
       <p>Inventory Tag</p>
     </div>
 
-    <div class="inventory-summary">
-      <span>Total Tags</span>
-      <strong id="inventory-count">0</strong>
+    <div class="dashboard-summary">
+      <div class="summary-box">
+        <div class="summary-label">Total Tags</div>
+        <div class="summary-value" id="inventory-count">0</div>
+      </div>
+      <div class="summary-box">
+        <div class="summary-label">Visible</div>
+        <div class="summary-value" id="inventory-visible-count">0</div>
+      </div>
     </div>
 
     <div class="control-group">
-      <label for="inventory-search">Search tags</label>
-      <input id="inventory-search" class="inventory-input" type="search" placeholder="Property no. or article">
+      <label for="inventory-search">Search Tags</label>
+      <input id="inventory-search" class="neu-input" type="search" placeholder="Property no. or article">
     </div>
 
     <div class="control-group">
       <label for="inventory-department">Department</label>
-      <select id="inventory-department" class="inventory-input">
+      <select id="inventory-department" class="neu-select">
         <option value="ALL">All Departments</option>
       </select>
     </div>
 
-    <div class="sidebar-navigation">
-      <button class="inventory-button" type="button" onclick="window.location.href='index.html'">Property Cards</button>
+    <div class="control-group">
+      <label>Inventory</label>
+      <button class="neu-btn" type="button" onclick="window.location.href='index.html'">
+        Property Cards
+      </button>
     </div>
 
-    <div class="inventory-sidebar-footer">
-      <button class="inventory-button primary print-sidebar-button" id="inventory-print-sidebar" type="button">
+    <div class="sidebar-footer">
+      <button class="neu-btn neu-btn-print" id="inventory-print-sidebar" type="button">
         <span class="print-icon" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 6 2 18 2 18 9"></polyline>
-            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-            <rect x="6" y="14" width="12" height="8"></rect>
+          <svg class="printer-svg" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline class="paper-top" points="6 9 6 2 18 2 18 9"></polyline>
+            <path class="printer-body" d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect class="paper-bottom" x="6" y="14" width="12" height="8"></rect>
           </svg>
         </span>
-        Print
+        Print Tags
       </button>
     </div>
   </aside>
