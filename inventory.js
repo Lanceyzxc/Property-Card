@@ -337,6 +337,36 @@ function buildInventoryPrintPage(records) {
   return page;
 }
 
+function getVisibleInventoryCards() {
+  return [...document.querySelectorAll('.inventory-tag-wrap')]
+    .map((wrap) => inventoryRecords[Number(wrap.dataset.recordIndex)])
+    .filter(Boolean);
+}
+
+function printVisibleInventory() {
+  const visible = getVisibleInventoryCards();
+  if (!visible.length) {
+    const showAlert = window.showAlert || (() => alert('No inventory tags are visible to print.'));
+    showAlert('No inventory tags are visible to print.');
+    return;
+  }
+
+  const sheet = document.createElement('div');
+  sheet.className = 'inventory-print-sheet';
+
+  const pageSize = 10;
+  for (let index = 0; index < visible.length; index += pageSize) {
+    const page = buildInventoryPrintPage(visible.slice(index, index + pageSize));
+    sheet.appendChild(page);
+  }
+
+  document.body.appendChild(sheet);
+  window.setTimeout(() => {
+    window.print();
+    window.setTimeout(() => sheet.remove(), 400);
+  }, 100);
+}
+
 function printSelectedInventory() {
   const selected = getSelectedInventoryCards();
   if (!selected.length) {
@@ -412,7 +442,6 @@ function startInventory() {
     select.innerHTML = '<option value="ALL">All Departments</option>';
     populateDepartments();
     renderTags();
-    document.getElementById('inventory-status').textContent = `${inventoryRecords.length} saved tag${inventoryRecords.length === 1 ? '' : 's'}`;
 
     // The UI should not wait for automatic tag-number persistence.
     await ensureInventoryTags(inventoryRecords, firebase.firestore());
@@ -422,7 +451,6 @@ function startInventory() {
     grid.classList.remove('is-loading');
     grid.setAttribute('aria-busy', 'false');
     grid.innerHTML = '<div class="empty-inventory">Unable to load inventory tags.</div>';
-    document.getElementById('inventory-status').textContent = 'Unable to load inventory tags.';
   });
 
   document.getElementById('inventory-search').addEventListener('input', renderTags);
@@ -432,6 +460,9 @@ function startInventory() {
     const shouldSelect = [...checks].some(check => !check.checked);
     checks.forEach(check => { check.checked = shouldSelect; });
   });
+
+  const sidebarPrintButton = document.getElementById('inventory-print-sidebar');
+  if (sidebarPrintButton) sidebarPrintButton.addEventListener('click', printVisibleInventory);
   document.getElementById('print-selected').addEventListener('click', printSelectedInventory);
 }
 

@@ -49,11 +49,27 @@ body {
   box-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
 }
 .sidebar-navigation .inventory-button { width: 100%; }
+.inventory-sidebar-footer {
+  margin-top: auto;
+  padding-top: 6px;
+}
+.print-sidebar-button {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.print-sidebar-button .print-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .sidebar-actions { display: grid; gap: 12px; margin-top: auto; }
 .inventory-button, .select-all-button { border: 0; border-radius: 11px; padding: 13px 15px; background: #e0e0e0; box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light); color: #333; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: .6px; }
 .inventory-button:active, .select-all-button:active { box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light); }
 .inventory-button.primary { color: var(--ink); }
-.inventory-status { display: none; }
+.inventory-status { display: none !important; }
 
 .inventory-main { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; padding: 36px; }
 .inventory-toolbar { max-width: 1400px; margin: 0 auto 28px; display: flex; justify-content: space-between; align-items: end; gap: 20px; }
