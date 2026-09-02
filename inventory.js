@@ -59,10 +59,33 @@ function field(label, value, fieldName, className = '') {
   return `<div class="tag-field ${className}"><span>${label}</span><strong contenteditable="true" role="textbox" spellcheck="false" data-field="${fieldName}">${escapeHtml(value)}</strong></div>`;
 }
 
+function getPublicBaseUrl() {
+  const origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://ucnprocards.vercel.app';
+  const hostname = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : '';
+
+  if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
+    return 'https://ucnprocards.vercel.app';
+  }
+
+  return origin.replace(/\/$/, '');
+}
+
 function getInventoryQrUrl(record) {
-  if (record.qrUrl) return record.qrUrl;
   const formName = /SPLV|SPHV/i.test(text(record.propertyNo)) ? 'ics.html' : 'par.html';
-  return `${window.location.origin}/${formName}?id=${encodeURIComponent(record.cardId)}`;
+  const fallbackUrl = `${getPublicBaseUrl()}/${formName}?id=${encodeURIComponent(record.cardId)}`;
+
+  if (!record || !record.cardId) return fallbackUrl;
+  if (!record.qrUrl) return fallbackUrl;
+
+  try {
+    const url = new URL(record.qrUrl);
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '0.0.0.0') {
+      return fallbackUrl;
+    }
+    return record.qrUrl;
+  } catch (error) {
+    return fallbackUrl;
+  }
 }
 
 function renderInventoryQRCodes() {

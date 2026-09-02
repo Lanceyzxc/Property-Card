@@ -27,6 +27,17 @@ let firebaseFirestore = null;
 let firebaseInitialized = false;
 let deferCardQrRendering = false;
 
+function getPublicBaseUrl() {
+  const origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://ucnprocards.vercel.app';
+  const hostname = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : '';
+
+  if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
+    return 'https://ucnprocards.vercel.app';
+  }
+
+  return origin.replace(/\/$/, '');
+}
+
 function finishMainLoading() {
   const container = document.getElementById('pages-container');
   if (!container) return;
@@ -205,9 +216,9 @@ function saveCardToFirebase(cardWrapper) {
 
   const cardId = data.cardId || `card-${Math.random().toString(36).substring(2, 10)}`;
   data.cardId = cardId;
-  // Persist a short QR URL using the current origin (auto-regenerated)
+  // Persist a short QR URL using the public app origin so mobile scans resolve reliably
   try {
-    const baseToUse = window.location.origin;
+    const baseToUse = getPublicBaseUrl();
     data.qrUrl = `${baseToUse.replace(/\/$/, '')}/${getFormPath(data.propertyNo)}?id=${encodeURIComponent(cardId)}`;
   } catch (e) {
     data.qrUrl = '';
@@ -271,7 +282,7 @@ function renderCardQRCode(cardWrapper) {
   if (!payload) return;
 
   // Use a short payload only (prefer full URL) to avoid QR code "code length overflow" errors
-  const shortText = payload.url || (payload.cardId ? `${window.location.origin}${window.location.pathname}?id=${encodeURIComponent(payload.cardId)}` : payload.cardId || '');
+  const shortText = payload.url || (payload.cardId ? `${getPublicBaseUrl()}${window.location.pathname}?id=${encodeURIComponent(payload.cardId)}` : payload.cardId || '');
   if (!shortText) return;
 
   try {
@@ -308,7 +319,7 @@ function collectCardPayload(cardWrapper) {
     unit: data.unit || 'pc'
   };
   if (data.cardId) {
-    const baseToUse = window.location.origin;
+    const baseToUse = getPublicBaseUrl();
     payload.url = `${baseToUse.replace(/\/$/, '')}/${getFormPath(data.propertyNo)}?id=${encodeURIComponent(data.cardId)}`;
   }
   return payload;
