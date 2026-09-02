@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Inventory Tags | UCN ProCard System</title>
-  <link rel="stylesheet" href="inventory.css?v=20260826.1">
+  <link rel="stylesheet" href="inventory.css?v=20260826.4">
   <link rel="icon" href="ucn.png" type="image/x-icon">
 </head>
 <body>
@@ -31,14 +31,10 @@
       </select>
     </div>
 
-    <div class="sidebar-navigation">
+    <di class="sidebar-navigation">
       <button class="inventory-button" type="button" onclick="window.location.href='index.html'">Property Cards</button>
-    </div>
+    </di
 
-    <div class="sidebar-actions">
-      <button class="inventory-button primary" id="print-inventory" type="button">Print All Tags</button>
-      <button class="inventory-button" id="print-selected" type="button">Print Selected</button>
-    </div>
     <div id="inventory-status" class="inventory-status" aria-live="polite">Loading inventory tags...</div>
   </aside>
 
@@ -48,7 +44,10 @@
         <span class="eyebrow">Government property records</span>
         <h2>Inventory Tags</h2>
       </div>
-      <button class="select-all-button" id="select-all" type="button">Select All</button>
+      <div class="inventory-toolbar-actions">
+        <button class="select-all-button" id="select-all" type="button">Select All</button>
+        <button class="select-all-button print-selected-button" id="print-selected" type="button">Print Selected</button>
+      </div>
     </header>
     <section id="inventory-grid" class="inventory-grid is-loading" aria-live="polite" aria-busy="true">
       <div class="inventory-loading-card" aria-hidden="true"><span></span><span></span><span></span></div>

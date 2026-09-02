@@ -10,6 +10,7 @@ const firebaseConfig = {
 
 let inventoryRecords = [];
 let qrRenderGeneration = 0;
+const DEFAULT_PROPERTY_CUSTODIAN = 'Arsenio Gem A. Garcillanosa';
 
 function text(value) {
   return value === undefined || value === null ? '' : String(value);
@@ -17,6 +18,15 @@ function text(value) {
 
 function inventoryTagSortKey(record) {
   return text(record.savedAt) || text(record.cardId);
+}
+
+function escapeHtml(value) {
+  return text(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 async function ensureInventoryTags(records, firestore) {
@@ -45,8 +55,8 @@ async function ensureInventoryTags(records, firestore) {
   if (missingRecords.length) await batch.commit();
 }
 
-function field(label, value, className = '') {
-  return `<div class="tag-field ${className}"><span>${label}</span><strong>${text(value) || '\u00a0'}</strong></div>`;
+function field(label, value, fieldName, className = '') {
+  return `<div class="tag-field ${className}"><span>${label}</span><strong contenteditable="true" role="textbox" spellcheck="false" data-field="${fieldName}">${escapeHtml(value)}</strong></div>`;
 }
 
 function getInventoryQrUrl(record) {
@@ -111,7 +121,7 @@ function renderTags() {
     return;
   }
 
-  grid.innerHTML = records.map((record, index) => `
+  grid.innerHTML = records.map((record) => `
     <article class="inventory-tag-wrap" data-record-index="${inventoryRecords.indexOf(record)}">
       <label class="tag-select"><input type="checkbox" class="tag-checkbox"><span>Select</span></label>
       <div class="inventory-card">
@@ -120,35 +130,245 @@ function renderTags() {
           <div class="inventory-qr" aria-label="QR code for property record"></div>
           <div class="inventory-title">
             <h3>GOVERNMENT PROPERTY</h3>
-            <div class="office-line">${text(record.dept) || '&nbsp;'}</div>
+            <div class="office-line" contenteditable="true" role="textbox" spellcheck="false" data-field="dept">${escapeHtml(record.dept)}</div>
             <small>Office/Location</small>
           </div>
           <div class="inventory-number">
-            <div class="inventory-no-value"><span>No.</span><strong>${text(record.inventoryTag)}</strong></div>
+            <div class="inventory-no-value"><span>No.</span><strong contenteditable="true" role="textbox" spellcheck="false" data-field="inventoryTag">${escapeHtml(record.inventoryTag)}</strong></div>
             <small>Inventory Tag</small>
           </div>
         </div>
         <div class="tag-fields">
-          ${field('Article', record.itemDescription, 'full')}
-          ${field('Property No.', record.propertyNo)}
-          ${field('Serial No.', record.serialNo)}
-          ${field('Serviceable', record.serviceable)}
-          ${field('Unserviceable', record.unserviceable)}
-          ${field('Unit/Quantity', `${text(record.quantity)} ${text(record.unit)}`)}
-          ${field('Acquisition Cost', record.acquisitionCost)}
+          ${field('Article', record.itemDescription, 'itemDescription', 'full')}
+          ${field('Property No.', record.propertyNo, 'propertyNo')}
+          ${field('Serial No.', record.serialNo, 'serialNo')}
+          ${field('Serviceable', record.serviceable, 'serviceable')}
+          ${field('Unserviceable', record.unserviceable, 'unserviceable')}
+          ${field('Unit/Quantity', record.unitQuantity || `${text(record.quantity)} ${text(record.unit)}`.trim(), 'unitQuantity')}
+          ${field('Acquisition Cost', record.acquisitionCost, 'acquisitionCost')}
         </div>
         <div class="tag-dates">
-          ${field('Date (Acquired)', record.dateAcquired)}
-          ${field('Date (Counted)', record.dateCounted)}
+          ${field('Date (Acquired)', record.dateAcquired, 'dateAcquired')}
+          ${field('Date (Counted)', record.dateCounted, 'dateCounted')}
         </div>
         <div class="tag-signatures">
-          ${field('COA Representative', '')}
-          ${field('Property Custodian', '')}
+          ${field('COA Representative', record.coaRepresentative, 'coaRepresentative')}
+          ${field('Property Custodian', record.propertyCustodian || DEFAULT_PROPERTY_CUSTODIAN, 'propertyCustodian')}
         </div>
       </div>
     </article>
   `).join('');
+  setupInventoryEditing();
+  fitSignatureNames();
   renderInventoryQRCodes();
+}
+
+function getSelectedInventoryCards() {
+  const selectedEntries = [...document.querySelectorAll('.inventory-tag-wrap')]
+    .filter((wrap) => wrap.querySelector('.tag-checkbox')?.checked)
+    .map((wrap) => inventoryRecords[Number(wrap.dataset.recordIndex)])
+    .filter(Boolean);
+  return selectedEntries;
+}
+
+function hasVisibleInventoryQr(record) {
+  const index = inventoryRecords.findIndex(item => item.cardId === record.cardId);
+  if (index === -1) return false;
+
+  const liveTag = document.querySelector(`.inventory-tag-wrap[data-record-index="${index}"]`);
+  if (!liveTag) return false;
+
+  return !!liveTag.querySelector('.inventory-qr img, .inventory-qr canvas');
+}
+
+function buildInventoryPrintPage(records) {
+  const page = document.createElement('div');
+  page.className = 'inventory-print-page';
+
+  records.forEach((record) => {
+    const container = document.createElement('div');
+    container.className = 'inventory-print-card-container';
+
+    const scaler = document.createElement('div');
+    scaler.className = 'inventory-print-card-scaler';
+
+    const card = document.createElement('div');
+    card.className = 'inventory-print-card';
+
+    const hasQr = hasVisibleInventoryQr(record);
+
+    const header = document.createElement('div');
+    header.className = 'inventory-print-header';
+    header.innerHTML = `
+      <div class="inventory-print-header-left"><img src="ucn.png" alt="UCN Logo"></div>
+      <div class="inventory-print-header-center">
+        <div class="inventory-print-main-title">GOVERNMENT PROPERTY</div>
+        <div class="inventory-print-office-block">
+          <div class="inventory-print-office-val">${escapeHtml(record.dept || 'GASS')}</div>
+          <div class="inventory-print-office-line"></div>
+          <div class="inventory-print-office-label">Office/Location</div>
+        </div>
+      </div>
+      <div class="inventory-print-header-right">
+        <div class="inventory-print-qr-wrapper">
+          <div class="inventory-print-tag-number"><span class="inventory-print-no-text">No.</span><span class="inventory-print-no-val">${escapeHtml(record.inventoryTag || '')}</span></div>
+          <div class="inventory-print-tag-label">Inventory Tag</div>
+          ${hasQr ? '<div class="inventory-print-qr-box"></div>' : ''}
+        </div>
+      </div>
+    `;
+
+    const body = document.createElement('div');
+    body.className = 'inventory-print-body-section';
+
+    const addField = (label, value) => {
+      const row = document.createElement('div');
+      row.className = 'inventory-print-form-row';
+      row.innerHTML = `<span class="inventory-print-label">${label}</span><div class="inventory-print-input-line">${escapeHtml(value || '')}</div>`;
+      return row;
+    };
+
+    const fieldPair = (leftLabel, leftValue, rightLabel, rightValue) => {
+      const row = document.createElement('div');
+      row.className = 'inventory-print-split-row';
+
+      const left = document.createElement('div');
+      left.className = 'inventory-print-split-col';
+      left.innerHTML = `<span class="inventory-print-label">${leftLabel}</span><div class="inventory-print-input-line">${escapeHtml(leftValue || '')}</div>`;
+
+      const right = document.createElement('div');
+      right.className = 'inventory-print-split-col';
+      right.innerHTML = `<span class="inventory-print-label">${rightLabel}</span><div class="inventory-print-input-line">${escapeHtml(rightValue || '')}</div>`;
+
+      row.append(left, right);
+      return row;
+    };
+
+    body.append(
+      addField('Article', record.itemDescription || ''),
+      fieldPair('Property No.', record.propertyNo, 'Serial No.', record.serialNo),
+      fieldPair('Serviceable', record.serviceable, 'Unserviceable', record.unserviceable),
+      fieldPair('Unit/Quantity', record.unitQuantity || `${text(record.quantity)} ${text(record.unit)}`.trim(), 'Acquisition Cost', record.acquisitionCost)
+    );
+
+    const footer = document.createElement('div');
+    footer.className = 'inventory-print-footer-section';
+    footer.innerHTML = `
+      <div class="inventory-print-footer-row">
+        <div class="inventory-print-sig-block">
+          <div class="inventory-print-sig-val">${escapeHtml(record.dateAcquired || '')}</div>
+          <div class="inventory-print-sig-line"></div>
+          <div class="inventory-print-sig-label">Date (Acquired)</div>
+        </div>
+        <div class="inventory-print-sig-block">
+          <div class="inventory-print-sig-val">${escapeHtml(record.dateCounted || '')}</div>
+          <div class="inventory-print-sig-line"></div>
+          <div class="inventory-print-sig-label">Date (Counted)</div>
+        </div>
+      </div>
+      <div class="inventory-print-footer-row">
+        <div class="inventory-print-sig-block">
+          <div class="inventory-print-sig-val">${escapeHtml(record.coaRepresentative || '')}</div>
+          <div class="inventory-print-sig-line"></div>
+          <div class="inventory-print-sig-label">COA Representative</div>
+        </div>
+        <div class="inventory-print-sig-block">
+          <div class="inventory-print-sig-val">${escapeHtml(record.propertyCustodian || DEFAULT_PROPERTY_CUSTODIAN)}</div>
+          <div class="inventory-print-sig-line"></div>
+          <div class="inventory-print-sig-label">Property Custodian</div>
+        </div>
+      </div>
+    `;
+
+    card.append(header, body, footer);
+    scaler.appendChild(card);
+    container.appendChild(scaler);
+    page.appendChild(container);
+
+    const qrBox = card.querySelector('.inventory-print-qr-box');
+    if (qrBox) {
+      const liveTag = document.querySelector(`.inventory-tag-wrap[data-record-index="${inventoryRecords.findIndex(item => item.cardId === record.cardId)}"]`);
+      const liveQr = liveTag?.querySelector('.inventory-qr img, .inventory-qr canvas');
+
+      if (liveQr) {
+        const image = document.createElement('img');
+        image.alt = 'QR code';
+
+        if (liveQr.tagName === 'CANVAS') {
+          image.src = liveQr.toDataURL('image/png');
+        } else {
+          image.src = liveQr.src;
+        }
+
+        qrBox.appendChild(image);
+      } else {
+        const qrUrl = getInventoryQrUrl(record);
+        const qrImage = document.createElement('img');
+        qrImage.alt = 'QR code';
+        qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrUrl)}`;
+        qrBox.appendChild(qrImage);
+      }
+    }
+  });
+
+  return page;
+}
+
+function printSelectedInventory() {
+  const selected = getSelectedInventoryCards();
+  if (!selected.length) {
+    const showAlert = window.showAlert || (() => alert('No inventory tags selected to print.'));
+    showAlert('No inventory tags selected to print.');
+    return;
+  }
+
+  const sheet = document.createElement('div');
+  sheet.className = 'inventory-print-sheet';
+
+  const pageSize = 10;
+  for (let index = 0; index < selected.length; index += pageSize) {
+    const page = buildInventoryPrintPage(selected.slice(index, index + pageSize));
+    sheet.appendChild(page);
+  }
+
+  document.body.appendChild(sheet);
+  window.setTimeout(() => {
+    window.print();
+    window.setTimeout(() => sheet.remove(), 400);
+  }, 100);
+}
+
+function setupInventoryEditing() {
+  document.querySelectorAll('[contenteditable="true"][data-field]').forEach(element => {
+    element.addEventListener('input', () => {
+      if (element.closest('.tag-signatures')) fitSignatureNames();
+    });
+    element.addEventListener('blur', () => {
+      const wrap = element.closest('.inventory-tag-wrap');
+      const record = inventoryRecords[Number(wrap.dataset.recordIndex)];
+      const fieldName = element.dataset.field;
+      if (!record || !fieldName) return;
+
+      const value = element.textContent.trim();
+      if (fieldName === 'unitQuantity') {
+        record.unitQuantity = value;
+      } else {
+        record[fieldName] = value;
+      }
+
+      firebase.firestore().collection('propertyTags').doc(record.cardId).update({ [fieldName]: value })
+        .catch(error => console.error('Inventory tag save error:', error));
+    });
+  });
+}
+
+function fitSignatureNames() {
+  document.querySelectorAll('.tag-signatures [contenteditable="true"]').forEach(element => {
+    element.style.fontSize = '';
+    while (element.scrollWidth > element.clientWidth && parseFloat(getComputedStyle(element).fontSize) > 7) {
+      element.style.fontSize = `${parseFloat(getComputedStyle(element).fontSize) - 0.5}px`;
+    }
+  });
 }
 
 function populateDepartments() {
@@ -159,22 +379,6 @@ function populateDepartments() {
     option.textContent = dept;
     select.appendChild(option);
   });
-}
-
-async function printInventory(selectedOnly) {
-  await renderInventoryQRCodes();
-  const wraps = [...document.querySelectorAll('.inventory-tag-wrap')].filter(wrap => {
-    return !selectedOnly || wrap.querySelector('.tag-checkbox').checked;
-  });
-  if (!wraps.length) {
-    window.alert(selectedOnly ? 'Select at least one inventory tag to print.' : 'No inventory tags available to print.');
-    return;
-  }
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write(`<!DOCTYPE html><html><head><title>Inventory Tags</title><link rel="stylesheet" href="inventory.css?v=20260826.1"><style>body{background:#fff!important}.inventory-sidebar,.inventory-toolbar,.tag-select{display:none!important}.inventory-main{padding:0!important}.inventory-grid{display:grid!important;gap:0.08in!important}.inventory-card{box-shadow:none!important}</style></head><body><main class="inventory-main"><section class="inventory-grid">${wraps.map(wrap => wrap.querySelector('.inventory-card').outerHTML).join('')}</section></main></body></html>`);
-  printWindow.document.close();
-  printWindow.focus();
-  printWindow.onload = () => { printWindow.print(); printWindow.close(); };
 }
 
 function startInventory() {
@@ -200,13 +404,12 @@ function startInventory() {
 
   document.getElementById('inventory-search').addEventListener('input', renderTags);
   document.getElementById('inventory-department').addEventListener('change', renderTags);
-  document.getElementById('print-inventory').addEventListener('click', () => printInventory(false));
-  document.getElementById('print-selected').addEventListener('click', () => printInventory(true));
   document.getElementById('select-all').addEventListener('click', () => {
     const checks = document.querySelectorAll('.tag-checkbox');
     const shouldSelect = [...checks].some(check => !check.checked);
     checks.forEach(check => { check.checked = shouldSelect; });
   });
+  document.getElementById('print-selected').addEventListener('click', printSelectedInventory);
 }
 
 document.addEventListener('DOMContentLoaded', startInventory);
