@@ -176,9 +176,9 @@ body {
     display: grid;
     grid-template-columns: max-content max-content;
     justify-content: center;
-    align-content: center;
-    gap: 10px;
-    padding: 0.5in;
+    align-content: start;
+    gap: 8px;
+    padding: 0.42in 0.35in 0.1in;
     box-sizing: border-box;
     break-after: page;
     page-break-after: always;
@@ -192,6 +192,7 @@ body {
   .inventory-print-card-container {
     width: 352px;
     height: 198px;
+    margin-top: 0;
   }
 
   .inventory-print-card-scaler {
@@ -206,10 +207,10 @@ body {
     height: 450px;
     background-color: #fdfdfc;
     border: 8px solid #7b1113;
-    padding: 25px 40px;
+    padding: 18px 32px 12px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     color: #7b1113;
     box-sizing: border-box;
     -webkit-print-color-adjust: exact !important;
@@ -220,7 +221,7 @@ body {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: start;
-    margin-bottom: -15px;
+    margin-bottom: 2px;
     width: 100%;
   }
 
@@ -331,8 +332,8 @@ body {
   .inventory-print-body-section {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 6px;
+    margin-bottom: 8px;
   }
 
   .inventory-print-form-row {
@@ -380,7 +381,7 @@ body {
   .inventory-print-footer-section {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 8px;
   }
 
   .inventory-print-footer-row {
