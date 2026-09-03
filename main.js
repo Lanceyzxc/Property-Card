@@ -1044,6 +1044,15 @@ function getPreferredExcelValue(row, candidates, fallback = '') {
   return formatValue(fallback || getExcelValue(row, 'Description')) || '';
 }
 
+function getExcelPropertyNumber(row) {
+  const candidates = ['Property No.', 'Property No./Item No.', 'Item No.', 'Asset No.'];
+  for (const label of candidates) {
+    const value = formatValue(getExcelValue(row, label));
+    if (value) return value;
+  }
+  return '';
+}
+
 function getExcelQuantity(row) {
   const value = getPreferredExcelValue(row, ['Quantity', 'Qty', 'Qty.', 'No. of Units']);
   if (!value) return '1';
@@ -1128,9 +1137,13 @@ function populateFromExcel(dataRows) {
       'Reference No.',
       'Contract Reference'
     ]);
-    const propertyNoRange = getPreferredExcelValue(row, ['Property No.', 'Property No./Item No.', 'Item No.', 'Asset No.']);
+    const propertyNoRange = getExcelPropertyNumber(row);
     const propertyNumbers = getPropertyNumberSequence(propertyNoRange);
     const propertyNoFromRow = propertyNumbers[0];
+    const quantityCount = Number.parseInt(qtyFromRow, 10);
+    const cardCount = propertyNumbers.length > 1
+      ? propertyNumbers.length
+      : (Number.isInteger(quantityCount) && quantityCount > 0 ? quantityCount : 1);
     const serialNoFromRow = getPreferredExcelValue(row, ['Serial No.', 'Serial Number', 'Serial']);
     const serviceableFromRow = getPreferredExcelValue(row, ['Serviceable', 'Condition']);
     const unserviceableFromRow = getPreferredExcelValue(row, ['Unserviceable']);
@@ -1235,17 +1248,17 @@ function populateFromExcel(dataRows) {
     // Auto-save the imported card immediately after fields are populated
     saveCardToFirebase(newCard);
 
-    for (let index = 1; index < propertyNumbers.length; index++) {
+    for (let index = 1; index < cardCount; index++) {
       const cardData = getCardData(newCard);
       cardData.cardId = '';
-      cardData.propertyNo = propertyNumbers[index];
+      cardData.propertyNo = propertyNumbers[index] || propertyNumbers[0];
       createSingleCard(matchedColor, cardData);
       const cardsAfterDuplication = document.querySelectorAll('.card-ui-wrapper');
       const duplicatedCard = cardsAfterDuplication[cardsAfterDuplication.length - 1];
       saveCardToFirebase(duplicatedCard);
     }
 
-    generatedCount += propertyNumbers.length;
+    generatedCount += cardCount;
   });
 
   // Refresh department filter options after import
