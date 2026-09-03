@@ -1051,6 +1051,24 @@ function getExcelQuantity(row) {
   return match ? match[0] : value;
 }
 
+function getPropertyNumberSequence(propertyNo) {
+  const value = formatValue(propertyNo);
+  const rangeMatch = value.match(/^(.*?)(\d+)\s+to\s+(\d+)$/i);
+  if (!rangeMatch) return value ? [value] : [''];
+
+  const prefix = rangeMatch[1];
+  const start = Number(rangeMatch[2]);
+  const end = Number(rangeMatch[3]);
+  if (!Number.isInteger(start) || !Number.isInteger(end) || end < start) {
+    return [value];
+  }
+
+  const numberWidth = Math.max(rangeMatch[2].length, rangeMatch[3].length);
+  return Array.from({ length: end - start + 1 }, (_, index) =>
+    `${prefix}${String(start + index).padStart(numberWidth, '0')}`
+  );
+}
+
 function getExcelUnit(row) {
   const value = getPreferredExcelValue(row, ['Unit', 'Unit of Measure', 'UOM']);
   if (!value) return 'pc';
@@ -1086,7 +1104,6 @@ function populateFromExcel(dataRows) {
 
     // 2. Create a new card
     createSingleCard(matchedColor);
-    generatedCount++;
     
     // 3. Target the newly created card
     const cards = document.querySelectorAll('.card-ui-wrapper');
@@ -1111,7 +1128,9 @@ function populateFromExcel(dataRows) {
       'Reference No.',
       'Contract Reference'
     ]);
-    const propertyNoFromRow = getPreferredExcelValue(row, ['Property No.', 'Property No./Item No.', 'Item No.', 'Asset No.']);
+    const propertyNoRange = getPreferredExcelValue(row, ['Property No.', 'Property No./Item No.', 'Item No.', 'Asset No.']);
+    const propertyNumbers = getPropertyNumberSequence(propertyNoRange);
+    const propertyNoFromRow = propertyNumbers[0];
     const serialNoFromRow = getPreferredExcelValue(row, ['Serial No.', 'Serial Number', 'Serial']);
     const serviceableFromRow = getPreferredExcelValue(row, ['Serviceable', 'Condition']);
     const unserviceableFromRow = getPreferredExcelValue(row, ['Unserviceable']);
@@ -1215,6 +1234,18 @@ function populateFromExcel(dataRows) {
 
     // Auto-save the imported card immediately after fields are populated
     saveCardToFirebase(newCard);
+
+    for (let index = 1; index < propertyNumbers.length; index++) {
+      const cardData = getCardData(newCard);
+      cardData.cardId = '';
+      cardData.propertyNo = propertyNumbers[index];
+      createSingleCard(matchedColor, cardData);
+      const cardsAfterDuplication = document.querySelectorAll('.card-ui-wrapper');
+      const duplicatedCard = cardsAfterDuplication[cardsAfterDuplication.length - 1];
+      saveCardToFirebase(duplicatedCard);
+    }
+
+    generatedCount += propertyNumbers.length;
   });
 
   // Refresh department filter options after import

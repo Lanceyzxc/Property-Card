@@ -269,6 +269,7 @@ body {
 .inventory-qr img, .inventory-qr canvas { display: block; width: 100%; height: 100%; }
 .inventory-title { position: absolute; left: 20%; right: 25%; top: 27%; text-align: center; }
 .inventory-title h3 { margin: 0; color: var(--ink); font-size: clamp(15px, 2.1vw, 26px); font-weight: 800; white-space: nowrap; }
+.inventory-university { margin-top: 2px; color: var(--ink); font-size: clamp(8px, 1.05vw, 14px); font-weight: 700; white-space: nowrap; }
 .office-line { margin: 7px auto 2px; width: 70%; min-height: 15px; border-bottom: 1.5px solid var(--ink); font-size: 12px; white-space: nowrap; overflow: hidden; }
 .inventory-title small, .inventory-number small { font-size: clamp(8px, .95vw, 15px); }
 .inventory-number { position: absolute; top: 0; right: 0; display: flex; flex-direction: column; align-items: center; color: var(--ink); font-size: clamp(9px, 1vw, 14px); font-weight: 800; white-space: nowrap; }
@@ -277,11 +278,12 @@ body {
 .inventory-no-value > span,
 .inventory-number small { font-size: .8em; font-weight: 800; }
 .inventory-no-value strong { font-size: 1em; }
-.tag-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 15px; margin-top: 14px; color: var(--ink); font-size: clamp(11px, 1.25vw, 18px); font-weight: 400; }
+.tag-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 15px; margin-top: 24px; color: var(--ink); font-size: clamp(11px, 1.25vw, 18px); font-weight: 400; }
 .tag-field { min-width: 0; display: flex; align-items: end; gap: 5px; }
 .tag-field.full { grid-column: 1 / -1; }
 .tag-field span { color: #6d2428; font-size: .76em; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
 .tag-field strong { min-width: 0; flex: 1; min-height: 19px; overflow: hidden; white-space: nowrap; border-bottom: 1.5px solid var(--ink); color: #171717; font-size: 1.08em; font-weight: 700; }
+.tag-field.full strong { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; white-space: normal; overflow: hidden; overflow-wrap: anywhere; line-height: 1.05; max-height: 3.15em; text-overflow: ellipsis; }
 [contenteditable="true"] { cursor: text; outline: 0; }
 [contenteditable="true"]:focus { background: rgba(123,24,30,.08); box-shadow: 0 2px 0 var(--ink); }
 .office-line[contenteditable="true"]:focus { overflow: visible; }
@@ -427,6 +429,15 @@ body {
     white-space: nowrap;
   }
 
+  .inventory-print-university {
+    color: #7b1113;
+    font-size: 17px;
+    font-weight: 900;
+    margin-top: -5px;
+    margin-bottom: 8px;
+    white-space: nowrap;
+  }
+
   .inventory-print-office-block {
     width: 320px;
     text-align: center;
@@ -551,6 +562,23 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .inventory-print-form-row:first-child .inventory-print-input-line {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    white-space: normal;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    line-height: 1.05;
+    max-height: 3.15em;
+    text-overflow: ellipsis;
+  }
+
+  .inventory-print-form-row.full .inventory-print-input-line {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .inventory-print-footer-section {

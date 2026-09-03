@@ -29,6 +29,10 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+function getPersonAccountable(record) {
+  return record.requestedBy || record.personAccountable || '';
+}
+
 async function ensureInventoryTags(records, firestore) {
   const year = String(new Date().getFullYear()).slice(-2);
   const usedNumbers = new Set();
@@ -154,6 +158,7 @@ function renderTags() {
           <div class="inventory-qr" aria-label="QR code for property record"></div>
           <div class="inventory-title">
             <h3>GOVERNMENT PROPERTY</h3>
+            <div class="inventory-university">University of Camarines Norte</div>
             <div class="office-line" contenteditable="true" role="textbox" spellcheck="false" data-field="dept">${escapeHtml(record.dept)}</div>
             <small>Office/Location</small>
           </div>
@@ -163,20 +168,17 @@ function renderTags() {
           </div>
         </div>
         <div class="tag-fields">
-          ${field('Article', record.itemDescription, 'itemDescription', 'full')}
-          ${field('Property No.', record.propertyNo, 'propertyNo')}
-          ${field('Serial No.', record.serialNo, 'serialNo')}
-          ${field('Serviceable', record.serviceable, 'serviceable')}
-          ${field('Unserviceable', record.unserviceable, 'unserviceable')}
-          ${field('Unit/Quantity', record.unitQuantity || `${text(record.quantity)} ${text(record.unit)}`.trim(), 'unitQuantity')}
+          ${field('Description', record.itemDescription, 'itemDescription', 'full')}
+          ${field('Property No.', record.propertyNo, 'propertyNo', 'full')}
           ${field('Acquisition Cost', record.acquisitionCost, 'acquisitionCost')}
+          ${field('Date (Acquired)', record.dateAcquired, 'dateAcquired')}
         </div>
         <div class="tag-dates">
-          ${field('Date (Acquired)', record.dateAcquired, 'dateAcquired')}
+          ${field('Person Accountable', getPersonAccountable(record), 'personAccountable')}
           ${field('Date (Counted)', record.dateCounted, 'dateCounted')}
         </div>
         <div class="tag-signatures">
-          ${field('COA Representative', record.coaRepresentative, 'coaRepresentative')}
+          ${field('Inventory Committee', record.coaRepresentative, 'coaRepresentative')}
           ${field('Property Custodian', record.propertyCustodian || DEFAULT_PROPERTY_CUSTODIAN, 'propertyCustodian')}
         </div>
       </div>
@@ -227,6 +229,7 @@ function buildInventoryPrintPage(records) {
       <div class="inventory-print-header-left"><img src="ucn.png" alt="UCN Logo"></div>
       <div class="inventory-print-header-center">
         <div class="inventory-print-main-title">GOVERNMENT PROPERTY</div>
+        <div class="inventory-print-university">University of Camarines Norte</div>
         <div class="inventory-print-office-block">
           <div class="inventory-print-office-val">${escapeHtml(record.dept || 'GASS')}</div>
           <div class="inventory-print-office-line"></div>
@@ -245,9 +248,9 @@ function buildInventoryPrintPage(records) {
     const body = document.createElement('div');
     body.className = 'inventory-print-body-section';
 
-    const addField = (label, value) => {
+    const addField = (label, value, className = '') => {
       const row = document.createElement('div');
-      row.className = 'inventory-print-form-row';
+      row.className = `inventory-print-form-row ${className}`.trim();
       row.innerHTML = `<span class="inventory-print-label">${label}</span><div class="inventory-print-input-line">${escapeHtml(value || '')}</div>`;
       return row;
     };
@@ -269,10 +272,9 @@ function buildInventoryPrintPage(records) {
     };
 
     body.append(
-      addField('Article', record.itemDescription || ''),
-      fieldPair('Property No.', record.propertyNo, 'Serial No.', record.serialNo),
-      fieldPair('Serviceable', record.serviceable, 'Unserviceable', record.unserviceable),
-      fieldPair('Unit/Quantity', record.unitQuantity || `${text(record.quantity)} ${text(record.unit)}`.trim(), 'Acquisition Cost', record.acquisitionCost)
+      addField('Description', record.itemDescription || '', 'article'),
+      addField('Property No.', record.propertyNo || '', 'full'),
+      fieldPair('Acquisition Cost', record.acquisitionCost, 'Date (Acquired)', record.dateAcquired)
     );
 
     const footer = document.createElement('div');
@@ -280,9 +282,9 @@ function buildInventoryPrintPage(records) {
     footer.innerHTML = `
       <div class="inventory-print-footer-row">
         <div class="inventory-print-sig-block">
-          <div class="inventory-print-sig-val">${escapeHtml(record.dateAcquired || '')}</div>
+          <div class="inventory-print-sig-val">${escapeHtml(getPersonAccountable(record))}</div>
           <div class="inventory-print-sig-line"></div>
-          <div class="inventory-print-sig-label">Date (Acquired)</div>
+          <div class="inventory-print-sig-label">Person Accountable</div>
         </div>
         <div class="inventory-print-sig-block">
           <div class="inventory-print-sig-val">${escapeHtml(record.dateCounted || '')}</div>
@@ -294,7 +296,7 @@ function buildInventoryPrintPage(records) {
         <div class="inventory-print-sig-block">
           <div class="inventory-print-sig-val">${escapeHtml(record.coaRepresentative || '')}</div>
           <div class="inventory-print-sig-line"></div>
-          <div class="inventory-print-sig-label">COA Representative</div>
+          <div class="inventory-print-sig-label">Inventory Committee</div>
         </div>
         <div class="inventory-print-sig-block">
           <div class="inventory-print-sig-val">${escapeHtml(record.propertyCustodian || DEFAULT_PROPERTY_CUSTODIAN)}</div>
