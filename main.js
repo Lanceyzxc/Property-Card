@@ -26,6 +26,7 @@ let allCards = [];
 let firebaseFirestore = null;
 let firebaseInitialized = false;
 let deferCardQrRendering = false;
+let cardQrObserver = null;
 
 function getPublicBaseUrl() {
   const origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://ucnprocards.vercel.app';
@@ -41,21 +42,30 @@ function getPublicBaseUrl() {
 function finishMainLoading() {
   const container = document.getElementById('pages-container');
   if (!container) return;
+  container.querySelectorAll('.main-loading-card').forEach((loadingCard) => loadingCard.remove());
   container.classList.remove('is-loading');
   container.setAttribute('aria-busy', 'false');
 }
 
 function renderLoadedCardQRCodes() {
-  let position = 0;
-  const cards = [...allCards];
-
-  function renderNextBatch() {
-    const batchEnd = Math.min(position + 8, cards.length);
-    for (; position < batchEnd; position += 1) renderCardQRCode(cards[position]);
-    if (position < cards.length) window.requestAnimationFrame(renderNextBatch);
+  if (!('IntersectionObserver' in window)) {
+    allCards.slice(0, 20).forEach(renderCardQRCode);
+    return;
   }
 
-  window.requestAnimationFrame(renderNextBatch);
+  if (!cardQrObserver) {
+    cardQrObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        renderCardQRCode(entry.target);
+        observer.unobserve(entry.target);
+      });
+    }, { root: document.getElementById('pages-container'), rootMargin: '800px 0px' });
+  }
+
+  allCards.forEach((card) => {
+    if (!card.querySelector('.qr-box img, .qr-box canvas')) cardQrObserver.observe(card);
+  });
 }
 
 const firebaseConfig = {
@@ -227,7 +237,10 @@ function saveCardToFirebase(cardWrapper) {
   cardDoc.set(data)
     .then(() => {
       cardWrapper.dataset.cardId = cardId;
-      renderCardQRCode(cardWrapper);
+      if (!deferCardQrRendering) {
+        if (cardQrObserver) cardQrObserver.observe(cardWrapper);
+        else renderCardQRCode(cardWrapper);
+      }
       updateFirebaseStatus(`Saved card ${cardId}`, "#499632");
     })
     .catch((err) => {
@@ -408,10 +421,10 @@ function restoreDefaultCards() {
 
 function createSingleCard(initColor, cardData = null) {
   const container = document.getElementById('pages-container');
-  let pages = container.querySelectorAll('.page-wrapper');
-  let lastPageGrid = null;
+  const lastPage = container.lastElementChild;
+  let lastPageGrid = lastPage ? lastPage.querySelector('.cards-grid') : null;
 
-  if (pages.length === 0 || pages[pages.length - 1].querySelector('.cards-grid').children.length >= 10) {
+  if (!lastPageGrid || lastPageGrid.children.length >= 10) {
     const newPage = document.createElement('div');
     newPage.className = 'page-wrapper';
     const newGrid = document.createElement('div');
@@ -420,7 +433,7 @@ function createSingleCard(initColor, cardData = null) {
     container.appendChild(newPage);
     lastPageGrid = newGrid;
   } else {
-    lastPageGrid = pages[pages.length - 1].querySelector('.cards-grid');
+    lastPageGrid = lastPage.querySelector('.cards-grid');
   }
 
   const currentIndex = uniqueCardId++;
@@ -466,8 +479,6 @@ function createSingleCard(initColor, cardData = null) {
   newCard.dataset.cardId = cardData && cardData.cardId ? cardData.cardId : `card-${currentIndex}`;
   allCards.push(newCard);
 
-  if (!deferCardQrRendering) renderCardQRCode(newCard);
-
   // Card click toggles selection when selection-mode is active
   newCard.addEventListener('click', function(e) {
     if (!document.body.classList.contains('selection-mode')) return;
@@ -508,7 +519,7 @@ function createSingleCard(initColor, cardData = null) {
   }
 
   setupFirebaseAutoSave(newCard);
-  if (!deferCardQrRendering) renderCardQRCode(newCard);
+  if (!deferCardQrRendering && cardQrObserver) cardQrObserver.observe(newCard);
   // Attach auto-resize behavior to any textarea inside the new card
   const textareas = newCard.querySelectorAll('textarea.auto-resize');
   textareas.forEach((ta) => {
@@ -794,9 +805,14 @@ function closeFieldThemePanel() {
 async function loadCardsFromFirestore() {
   if (!firebaseInitialized || !firebaseFirestore) return false;
   updateFirebaseStatus("Loading saved cards...", "#004aad");
+  const container = document.getElementById('pages-container');
+  const previousDisplay = container ? container.style.display : '';
 
   try {
-    const snapshot = await firebaseFirestore.collection('propertyTags').get();
+    const snapshot = await Promise.race([
+      firebaseFirestore.collection('propertyTags').get(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore load timed out')), 8000))
+    ]);
     if (snapshot.empty) {
       finishMainLoading();
       updateFirebaseStatus("No saved cards found. Starting fresh.", "#004aad");
@@ -808,6 +824,7 @@ async function loadCardsFromFirestore() {
     uniqueCardId = 0;
     allCards = [];
     deferCardQrRendering = true;
+    if (container) container.style.display = 'none';
 
     snapshot.forEach((doc) => {
       const cardData = doc.data();
@@ -819,6 +836,7 @@ async function loadCardsFromFirestore() {
     });
 
     deferCardQrRendering = false;
+    if (container) container.style.display = previousDisplay;
     finishMainLoading();
     renderLoadedCardQRCodes();
 
@@ -826,6 +844,7 @@ async function loadCardsFromFirestore() {
     return true;
   } catch (err) {
     deferCardQrRendering = false;
+    if (container) container.style.display = previousDisplay;
     finishMainLoading();
     console.error('Firestore load error', err);
     updateFirebaseStatus("Unable to load saved cards", "#9a0603");
@@ -840,6 +859,7 @@ window.onload = async function() {
   if (!loaded) {
     addCards(10);
     finishMainLoading();
+    renderLoadedCardQRCodes();
   }
   buildFilterOptions();
   // Wire up filter UI
@@ -970,7 +990,7 @@ function processExcel() {
   statusText.innerText = "Processing Data...";
 
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     try {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, {type: 'array'});
@@ -989,7 +1009,7 @@ function processExcel() {
         uniqueCardId = 0;
         allCards = [];
 
-        const generatedCount = populateFromExcel(jsonData);
+        const generatedCount = await populateFromExcel(jsonData);
         refreshDashboardSummary();
         if (generatedCount > 0) {
           statusText.style.color = "#499632";
@@ -1084,16 +1104,21 @@ function getExcelUnit(row) {
   return value;
 }
 
-function populateFromExcel(dataRows) {
+async function populateFromExcel(dataRows) {
   let generatedCount = 0;
+  const container = document.getElementById('pages-container');
+  const previousDisplay = container ? container.style.display : '';
+  deferCardQrRendering = true;
+  if (container) container.style.display = 'none';
 
-  dataRows.forEach(row => {
+  for (let rowIndex = 0; rowIndex < dataRows.length; rowIndex += 1) {
+    const row = dataRows[rowIndex];
     const classification = formatValue(getExcelValue(row, 'Inventory/Property Classification'));
     const normalizedClassification = classification.toLowerCase().replace(/[\s\u00A0]+/g, ' ').trim();
     const shouldGenerate = normalizedClassification.includes('semi') || normalizedClassification.includes('non');
 
     if (!classification || !shouldGenerate) {
-      return; // skip Expendable or undefined classification rows
+      continue; // skip Expendable or undefined classification rows
     }
 
     // 1. Check if the row has a "Department" header to set the exact color
@@ -1115,8 +1140,7 @@ function populateFromExcel(dataRows) {
     createSingleCard(matchedColor);
     
     // 3. Target the newly created card
-    const cards = document.querySelectorAll('.card-ui-wrapper');
-    const newCard = cards[cards.length - 1];
+    const newCard = allCards[allCards.length - 1];
     const inputs = newCard.querySelectorAll('.underline-input');
 
     const qtyFromRow = getExcelQuantity(row);
@@ -1253,13 +1277,21 @@ function populateFromExcel(dataRows) {
       cardData.cardId = '';
       cardData.propertyNo = propertyNumbers[index] || propertyNumbers[0];
       createSingleCard(matchedColor, cardData);
-      const cardsAfterDuplication = document.querySelectorAll('.card-ui-wrapper');
-      const duplicatedCard = cardsAfterDuplication[cardsAfterDuplication.length - 1];
+      const duplicatedCard = allCards[allCards.length - 1];
       saveCardToFirebase(duplicatedCard);
     }
 
     generatedCount += cardCount;
-  });
+
+    // Yield to the browser regularly so large imports keep the page responsive.
+    if (rowIndex % 20 === 19) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+  }
+
+  deferCardQrRendering = false;
+  if (container) container.style.display = previousDisplay;
+  renderLoadedCardQRCodes();
 
   // Refresh department filter options after import
   buildFilterOptions();

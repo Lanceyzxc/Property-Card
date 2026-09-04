@@ -9,7 +9,7 @@ function printSelected() {
 
 function printCards(cardsToPrint) {
   const cards = cardsToPrint === undefined
-    ? Array.from(document.querySelectorAll('.card-ui-wrapper'))
+    ? Array.from(allCards || [])
     : Array.from(cardsToPrint || []).filter(Boolean);
   if (cards.length === 0) {
     showAlert('No cards available to print.');
@@ -62,7 +62,11 @@ function printCards(cardsToPrint) {
       body.appendChild(row);
     });
 
-    const sourceQr = cardWrapper.querySelector('.qr-box canvas, .qr-box img');
+    let sourceQr = cardWrapper.querySelector('.qr-box canvas, .qr-box img');
+    if (!sourceQr && typeof renderCardQRCode === 'function') {
+      renderCardQRCode(cardWrapper);
+      sourceQr = cardWrapper.querySelector('.qr-box canvas, .qr-box img');
+    }
     if (sourceQr) {
       const qrImage = document.createElement('img');
       qrImage.src = sourceQr.tagName === 'CANVAS' ? sourceQr.toDataURL('image/png') : sourceQr.src;
