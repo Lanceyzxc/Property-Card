@@ -23,10 +23,11 @@ const defaultLayout = [
 let totalCardCount = 0;
 let uniqueCardId = 0;
 let allCards = [];
+let knownCardCount = 0;
+let cardsStillRendering = false;
 let firebaseFirestore = null;
 let firebaseInitialized = false;
 let deferCardQrRendering = false;
-let cardQrObserver = null;
 
 function getPublicBaseUrl() {
   const origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://ucnprocards.vercel.app';
@@ -48,24 +49,26 @@ function finishMainLoading() {
 }
 
 function renderLoadedCardQRCodes() {
-  if (!('IntersectionObserver' in window)) {
-    allCards.slice(0, 20).forEach(renderCardQRCode);
-    return;
+  let position = 0;
+  const cards = [...allCards];
+
+  function renderNextBatch() {
+    const batchEnd = Math.min(position + 8, cards.length);
+    for (; position < batchEnd; position += 1) renderCardQRCode(cards[position]);
+    if (position < cards.length) window.requestAnimationFrame(renderNextBatch);
   }
 
-  if (!cardQrObserver) {
-    cardQrObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        renderCardQRCode(entry.target);
-        observer.unobserve(entry.target);
-      });
-    }, { root: document.getElementById('pages-container'), rootMargin: '800px 0px' });
-  }
+  window.requestAnimationFrame(renderNextBatch);
+}
 
-  allCards.forEach((card) => {
-    if (!card.querySelector('.qr-box img, .qr-box canvas')) cardQrObserver.observe(card);
-  });
+function yieldToBrowser() {
+  return new Promise(resolve => window.setTimeout(resolve, 0));
+}
+
+function hasActiveCardFilter() {
+  const filterEl = document.getElementById('filter-dept');
+  const searchEl = document.getElementById('search-query');
+  return (filterEl && filterEl.value !== 'ALL') || (searchEl && searchEl.value.trim());
 }
 
 const firebaseConfig = {
@@ -237,10 +240,7 @@ function saveCardToFirebase(cardWrapper) {
   cardDoc.set(data)
     .then(() => {
       cardWrapper.dataset.cardId = cardId;
-      if (!deferCardQrRendering) {
-        if (cardQrObserver) cardQrObserver.observe(cardWrapper);
-        else renderCardQRCode(cardWrapper);
-      }
+      if (!deferCardQrRendering) renderCardQRCode(cardWrapper);
       updateFirebaseStatus(`Saved card ${cardId}`, "#499632");
     })
     .catch((err) => {
@@ -413,6 +413,7 @@ function restoreDefaultCards() {
   totalCardCount = 0;
   uniqueCardId = 0;
   allCards = [];
+  knownCardCount = 0;
 
   for (let i = 0; i < defaultLayout.length; i++) {
     createSingleCard(defaultLayout[i]);
@@ -479,6 +480,8 @@ function createSingleCard(initColor, cardData = null) {
   newCard.dataset.cardId = cardData && cardData.cardId ? cardData.cardId : `card-${currentIndex}`;
   allCards.push(newCard);
 
+  if (!deferCardQrRendering) renderCardQRCode(newCard);
+
   // Card click toggles selection when selection-mode is active
   newCard.addEventListener('click', function(e) {
     if (!document.body.classList.contains('selection-mode')) return;
@@ -519,7 +522,6 @@ function createSingleCard(initColor, cardData = null) {
   }
 
   setupFirebaseAutoSave(newCard);
-  if (!deferCardQrRendering && cardQrObserver) cardQrObserver.observe(newCard);
   // Attach auto-resize behavior to any textarea inside the new card
   const textareas = newCard.querySelectorAll('textarea.auto-resize');
   textareas.forEach((ta) => {
@@ -805,8 +807,6 @@ function closeFieldThemePanel() {
 async function loadCardsFromFirestore() {
   if (!firebaseInitialized || !firebaseFirestore) return false;
   updateFirebaseStatus("Loading saved cards...", "#004aad");
-  const container = document.getElementById('pages-container');
-  const previousDisplay = container ? container.style.display : '';
 
   try {
     const snapshot = await Promise.race([
@@ -823,28 +823,46 @@ async function loadCardsFromFirestore() {
     totalCardCount = 0;
     uniqueCardId = 0;
     allCards = [];
+    knownCardCount = snapshot.size;
     deferCardQrRendering = true;
-    if (container) container.style.display = 'none';
 
-    snapshot.forEach((doc) => {
+    const savedCards = snapshot.docs;
+    const renderSavedCard = (doc) => {
       const cardData = doc.data();
       const deptName = cardData.dept || '';
       const matchedDept = departments.find(d => d.name === deptName);
       const color = cardData.color || (matchedDept ? matchedDept.color : departments[0].color);
       cardData.cardId = doc.id;
       createSingleCard(color, cardData);
-    });
+    };
+
+    const initialBatchSize = 20;
+    cardsStillRendering = savedCards.length > initialBatchSize;
+    savedCards.slice(0, initialBatchSize).forEach(renderSavedCard);
 
     deferCardQrRendering = false;
-    if (container) container.style.display = previousDisplay;
     finishMainLoading();
     renderLoadedCardQRCodes();
+
+    // Keep the first screen responsive while the rest of a large collection is built.
+    (async () => {
+      for (let start = initialBatchSize; start < savedCards.length; start += 20) {
+        savedCards.slice(start, start + 20).forEach(renderSavedCard);
+        if (hasActiveCardFilter()) applyFilter();
+        await yieldToBrowser();
+      }
+      cardsStillRendering = false;
+      knownCardCount = allCards.length;
+      if (hasActiveCardFilter()) applyFilter();
+      renderLoadedCardQRCodes();
+      refreshDashboardSummary();
+    })().catch(error => console.error('Deferred card rendering error', error));
 
     updateFirebaseStatus(`Loaded ${snapshot.size} saved cards.`, "#499632");
     return true;
   } catch (err) {
     deferCardQrRendering = false;
-    if (container) container.style.display = previousDisplay;
+    cardsStillRendering = false;
     finishMainLoading();
     console.error('Firestore load error', err);
     updateFirebaseStatus("Unable to load saved cards", "#9a0603");
@@ -859,7 +877,6 @@ window.onload = async function() {
   if (!loaded) {
     addCards(10);
     finishMainLoading();
-    renderLoadedCardQRCodes();
   }
   buildFilterOptions();
   // Wire up filter UI
@@ -961,8 +978,13 @@ window.onload = async function() {
 };
 
 function refreshDashboardSummary() {
-  const totalCards = allCards.length;
-  const visibleCards = document.querySelectorAll('.card-ui-wrapper').length;
+  const totalCards = cardsStillRendering ? knownCardCount : allCards.length;
+  const filterEl = document.getElementById('filter-dept');
+  const searchEl = document.getElementById('search-query');
+  const hasActiveFilter = (filterEl && filterEl.value !== 'ALL') || (searchEl && searchEl.value.trim());
+  const visibleCards = hasActiveFilter
+    ? document.querySelectorAll('.card-ui-wrapper').length
+    : totalCards;
   const uniqueDepartments = new Set();
   allCards.forEach(card => {
     const select = card.querySelector('.dept-select');

@@ -10,6 +10,8 @@ const firebaseConfig = {
 
 let inventoryRecords = [];
 let qrRenderGeneration = 0;
+let inventoryQrObserver = null;
+let inventoryRenderGeneration = 0;
 const DEFAULT_PROPERTY_CUSTODIAN = 'Arsenio Gem A. Garcillanosa';
 
 function text(value) {
@@ -47,16 +49,18 @@ async function ensureInventoryTags(records, firestore) {
     .filter(record => !text(record.inventoryTag))
     .sort((left, right) => inventoryTagSortKey(left).localeCompare(inventoryTagSortKey(right)));
 
-  const batch = firestore.batch();
-  missingRecords.forEach(record => {
-    while (usedNumbers.has(nextNumber)) nextNumber += 1;
-    record.inventoryTag = `${year}-${String(nextNumber).padStart(4, '0')}`;
-    usedNumbers.add(nextNumber);
-    nextNumber += 1;
-    batch.update(firestore.collection('propertyTags').doc(record.cardId), { inventoryTag: record.inventoryTag });
-  });
-
-  if (missingRecords.length) await batch.commit();
+  for (let start = 0; start < missingRecords.length; start += 450) {
+    const batch = firestore.batch();
+    const batchRecords = missingRecords.slice(start, start + 450);
+    batchRecords.forEach(record => {
+      while (usedNumbers.has(nextNumber)) nextNumber += 1;
+      record.inventoryTag = `${year}-${String(nextNumber).padStart(4, '0')}`;
+      usedNumbers.add(nextNumber);
+      nextNumber += 1;
+      batch.update(firestore.collection('propertyTags').doc(record.cardId), { inventoryTag: record.inventoryTag });
+    });
+    await batch.commit();
+  }
 }
 
 function field(label, value, fieldName, className = '') {
@@ -94,42 +98,34 @@ function getInventoryQrUrl(record) {
 
 function renderInventoryQRCodes() {
   if (!window.QRCode) return Promise.resolve();
-  const generation = ++qrRenderGeneration;
-  const containers = [...document.querySelectorAll('.inventory-qr')];
-  let position = 0;
-
-  return new Promise(resolve => {
-    function renderNextBatch() {
-      if (generation !== qrRenderGeneration) {
-        resolve();
-        return;
-      }
-    const batchEnd = Math.min(position + 8, containers.length);
-    for (; position < batchEnd; position += 1) {
-      const container = containers[position];
-      const index = Number(container.closest('.inventory-tag-wrap').dataset.recordIndex);
-      const record = inventoryRecords[index];
-      if (!record) continue;
-      container.innerHTML = '';
-      new QRCode(container, {
-        text: getInventoryQrUrl(record),
-        width: 64,
-        height: 64,
-        correctLevel: QRCode.CorrectLevel.M
+  qrRenderGeneration += 1;
+  if (!inventoryQrObserver) {
+    inventoryQrObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const container = entry.target;
+        const record = inventoryRecords[Number(container.closest('.inventory-tag-wrap').dataset.recordIndex)];
+        if (!record) return;
+        container.innerHTML = '';
+        new QRCode(container, {
+          text: getInventoryQrUrl(record),
+          width: 64,
+          height: 64,
+          correctLevel: QRCode.CorrectLevel.M
+        });
+        observer.unobserve(container);
       });
-    }
-      if (position < containers.length) {
-        window.requestAnimationFrame(renderNextBatch);
-      } else {
-        resolve();
-      }
-    }
+    }, { root: document.querySelector('.inventory-main'), rootMargin: '800px 0px' });
+  }
 
-    window.requestAnimationFrame(renderNextBatch);
+  document.querySelectorAll('.inventory-qr').forEach(container => {
+    if (!container.querySelector('img, canvas')) inventoryQrObserver.observe(container);
   });
+  return Promise.resolve();
 }
 
-function renderTags() {
+async function renderTags() {
+  const renderGeneration = ++inventoryRenderGeneration;
   const grid = document.getElementById('inventory-grid');
   const query = document.getElementById('inventory-search').value.trim().toLowerCase();
   const department = document.getElementById('inventory-department').value;
@@ -149,7 +145,11 @@ function renderTags() {
     return;
   }
 
-  grid.innerHTML = records.map((record) => `
+  grid.innerHTML = '';
+  const batchSize = 40;
+  for (let start = 0; start < records.length; start += batchSize) {
+    if (renderGeneration !== inventoryRenderGeneration) return;
+    grid.insertAdjacentHTML('beforeend', records.slice(start, start + batchSize).map((record) => `
     <article class="inventory-tag-wrap" data-record-index="${inventoryRecords.indexOf(record)}">
       <label class="tag-select"><input type="checkbox" class="tag-checkbox"><span>Select</span></label>
       <div class="inventory-card">
@@ -183,10 +183,13 @@ function renderTags() {
         </div>
       </div>
     </article>
-  `).join('');
-  setupInventoryEditing();
-  fitSignatureNames();
-  renderInventoryQRCodes();
+    `).join(''));
+    const renderedTags = [...grid.querySelectorAll('.inventory-tag-wrap')].slice(-batchSize);
+    setupInventoryEditing(renderedTags);
+    fitSignatureNames(renderedTags);
+    renderInventoryQRCodes();
+    await new Promise(resolve => window.setTimeout(resolve, 0));
+  }
 }
 
 function getSelectedInventoryCards() {
@@ -394,8 +397,11 @@ function printSelectedInventory() {
   }, 100);
 }
 
-function setupInventoryEditing() {
-  document.querySelectorAll('[contenteditable="true"][data-field]').forEach(element => {
+function setupInventoryEditing(scope = document) {
+  const elements = Array.isArray(scope)
+    ? scope.flatMap(item => [...item.querySelectorAll('[contenteditable="true"][data-field]')])
+    : [...(scope instanceof Element ? scope : document).querySelectorAll('[contenteditable="true"][data-field]')];
+  elements.forEach(element => {
     element.addEventListener('input', () => {
       if (element.closest('.tag-signatures')) fitSignatureNames();
     });
@@ -418,8 +424,11 @@ function setupInventoryEditing() {
   });
 }
 
-function fitSignatureNames() {
-  document.querySelectorAll('.tag-signatures [contenteditable="true"]').forEach(element => {
+function fitSignatureNames(scope = document) {
+  const elements = Array.isArray(scope)
+    ? scope.flatMap(item => [...item.querySelectorAll('.tag-signatures [contenteditable="true"]')])
+    : [...(scope instanceof Element ? scope : document).querySelectorAll('.tag-signatures [contenteditable="true"]')];
+  elements.forEach(element => {
     element.style.fontSize = '';
     while (element.scrollWidth > element.clientWidth && parseFloat(getComputedStyle(element).fontSize) > 7) {
       element.style.fontSize = `${parseFloat(getComputedStyle(element).fontSize) - 0.5}px`;
@@ -437,9 +446,12 @@ function populateDepartments() {
   });
 }
 
-function startInventory() {
+async function startInventory() {
   firebase.initializeApp(firebaseConfig);
-  firebase.firestore().collection('propertyTags').onSnapshot(async snapshot => {
+  const firestore = firebase.firestore();
+  const grid = document.getElementById('inventory-grid');
+
+  const renderSnapshot = async (snapshot) => {
     inventoryRecords = snapshot.docs.map(doc => ({ cardId: doc.id, ...doc.data() }));
     const select = document.getElementById('inventory-department');
     select.innerHTML = '<option value="ALL">All Departments</option>';
@@ -447,14 +459,26 @@ function startInventory() {
     renderTags();
 
     // The UI should not wait for automatic tag-number persistence.
-    await ensureInventoryTags(inventoryRecords, firebase.firestore());
-  }, error => {
+    ensureInventoryTags(inventoryRecords, firestore).catch(error => console.error('Inventory tag assignment error:', error));
+  };
+
+  try {
+    const initialSnapshot = await Promise.race([
+      firestore.collection('propertyTags').get(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Inventory load timed out')), 8000))
+    ]);
+    await renderSnapshot(initialSnapshot);
+    firestore.collection('propertyTags').onSnapshot(renderSnapshot, handleInventoryLoadError);
+  } catch (error) {
+    handleInventoryLoadError(error);
+  }
+
+  function handleInventoryLoadError(error) {
     console.error(error);
-    const grid = document.getElementById('inventory-grid');
     grid.classList.remove('is-loading');
     grid.setAttribute('aria-busy', 'false');
     grid.innerHTML = '<div class="empty-inventory">Unable to load inventory tags.</div>';
-  });
+  }
 
   document.getElementById('inventory-search').addEventListener('input', renderTags);
   document.getElementById('inventory-department').addEventListener('change', renderTags);
