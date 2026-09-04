@@ -138,7 +138,7 @@ async function renderTags() {
   grid.classList.remove('is-loading');
   grid.setAttribute('aria-busy', 'false');
 
-  document.getElementById('inventory-count').textContent = records.length;
+  document.getElementById('inventory-count').textContent = inventoryRecords.length;
   document.getElementById('inventory-visible-count').textContent = records.length;
   if (!records.length) {
     grid.innerHTML = '<div class="empty-inventory">No inventory tags found.</div>';
