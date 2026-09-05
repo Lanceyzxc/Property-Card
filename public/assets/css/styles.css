@@ -19,7 +19,6 @@ body {
   overflow: hidden;
 }
 
-/* SIDEBAR / CONTROL PANEL */
 .sidebar {
   width: 320px;
   background-color: var(--bg-color);
@@ -391,7 +390,6 @@ body {
   background: transparent;
 }
 
-/* Watermark centered within the content area (excludes header/banner) */
 .form-section::before {
   content: '';
   position: absolute;
@@ -400,7 +398,7 @@ body {
   transform: translate(-50%, -50%);
   width: 420px;
   height: 420px;
-  background-image: url("ucn.png");
+  background-image: url("../images/ucn.png");
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -453,7 +451,6 @@ body {
   font-weight: 400;
 }
 
-/* Auto-resize textarea for Item Description */
 .auto-resize {
   resize: none;
   overflow: hidden;
@@ -468,7 +465,6 @@ body {
   outline: none;
 }
 
-/* Print sheet: two 3.8in by 2.07in tags on each letter portrait page. */
 .print-sheet {
   display: none;
 }
@@ -578,7 +574,7 @@ body {
     transform: translate(-50%, -50%);
     width: 80%;
     height: 80%;
-    background: url("ucn.png") center / contain no-repeat;
+    background: url("../images/ucn.png") center / contain no-repeat;
     opacity: 0.15;
     z-index: -1;
   }
@@ -644,7 +640,6 @@ body {
     font-weight: 400;
   }
 }
-/* NEUMORPHIC PRINT BUTTON & ANIMATIONS */
 .neu-btn-print {
   color: #7b181e;
   font-weight: 900;
@@ -655,11 +650,9 @@ body {
              -6px -6px 12px var(--neumorphic-light);
   border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  /* Subtle breathing shadow */
   animation: shadowBreathe 3s infinite ease-in-out;
 }
 
-/* Hover state: Umaangat at mas umiitim ang text */
 .neu-btn-print:hover {
   box-shadow: 8px 8px 16px var(--neumorphic-dark), 
              -8px -8px 16px var(--neumorphic-light);
@@ -667,7 +660,6 @@ body {
   color: #7b181e;
 }
 
-/* Active state: Lulubog nang malalim kapag kinlick */
 .neu-btn-print:active {
   box-shadow: inset 5px 5px 10px var(--neumorphic-dark), 
               inset -5px -5px 10px var(--neumorphic-light);
@@ -675,14 +667,12 @@ body {
   animation: none;
 }
 
-/* Icon Alignment */
 .neu-btn-print .print-icon {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* --- PRINTER SVG ANIMATIONS --- */
 .printer-svg {
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -691,23 +681,20 @@ body {
   transform: scale(1.15); /* Lumalaki nang kaunti yung buong printer */
 }
 
-/* Papel sa taas (pumapasok) */
 .paper-top {
   transition: transform 0.4s ease-in-out;
 }
 .neu-btn-print:hover .paper-top {
-  transform: translateY(3px); /* Hinihigop pababa yung papel */
+  transform: translateY(3px);
 }
 
-/* Papel sa baba (lumalabas) */
 .paper-bottom {
   transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .neu-btn-print:hover .paper-bottom {
-  transform: translateY(4px); /* Iniluluwa yung papel */
+  transform: translateY(4px);
 }
 
-/* Breathing Shadow Effect */
 @keyframes shadowBreathe {
   0% {
     box-shadow: 6px 6px 12px var(--neumorphic-dark), -6px -6px 12px var(--neumorphic-light);
@@ -896,7 +883,6 @@ body.delete-loading .main-content {
   min-width: 100px;
 }
 
-/* Floating add-card action */
 .add-card-floating {
   position: fixed;
   right: 24px;
@@ -982,7 +968,6 @@ body.delete-loading .main-content {
   font-size: 13px;
 }
 
-/* Floating collapsible search (top-right) */
 .floating-search {
   position: fixed;
   right: 24px;
@@ -1063,7 +1048,6 @@ body.delete-loading .main-content {
 }
 
 .select-panel {
-  /* Position the panel to the left of the FAB so it doesn't overlap main content */
   position: absolute;
   right: 80px; /* sit to the left of the floating button */
   bottom: 0; /* align vertically with the FAB */
@@ -1147,7 +1131,6 @@ body.delete-loading .main-content {
   transform: translateY(-2px) scale(1.03);
 }
 
-/* When the panel is open, nudge the FAB slightly left so the panel has room */
 .select-card-floating.open .select-fab {
   transform: translateX(-8px) translateY(-2px) scale(1.03);
 }
@@ -1212,7 +1195,6 @@ body.delete-loading .main-content {
 }
 
 .add-panel {
-  /* Position the panel to the left of the Add FAB so it opens without overlapping content */
   position: absolute;
   right: 80px; /* sit to the left of the floating button */
   bottom: 0; /* align vertically with the FAB */
@@ -1230,7 +1212,6 @@ body.delete-loading .main-content {
   display: block;
 }
 
-/* When the add panel is open, nudge the FAB slightly left */
 .add-card-floating.open .add-fab {
   transform: translateX(-8px) translateY(-2px) scale(1.03);
 }

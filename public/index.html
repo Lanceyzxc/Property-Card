@@ -3,10 +3,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UCN ProCard System</title>
-<!-- Add SheetJS Library to parse Excel Files in the browser -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="stylesheet" href="styles.css?v=20260826.4">
-<link rel="icon" href="ucn.png" type="image/x-icon">
+<link rel="stylesheet" href="assets/css/styles.css?v=20260826.4">
+<link rel="icon" href="assets/images/ucn.png" type="image/x-icon">
 </meta>
 <body>
 
@@ -27,7 +26,6 @@
     </div>
   </div>
 
-  <!-- EXCEL UPLOAD SECTION -->
   <div class="control-group">
     <label>Upload Excel File</label>
     <input type="file" id="excel-file" class="neu-input" accept=".xlsx, .xls, .csv" style="padding: 10px; font-size: 12px; background: #fff;">
@@ -47,13 +45,10 @@
     <div id="upload-status" style="font-size: 12px; color: #9a0603; text-align: center; font-weight: bold;"></div>
   </div>
 
-  <!-- Search moved to floating top-right widget -->
-
   <div class="control-group">
     <label>Filter</label>
     <select id="filter-dept" class="neu-select" style="margin-bottom: 8px;">
       <option value="ALL">All Departments</option>
-      <!-- Department options injected by JS -->
     </select>
     <div class="btn-row">
       <button class="neu-btn" style="flex:1;" id="reset-filter">Reset</button>
@@ -67,7 +62,6 @@
     </button>
   </div>
 
-  <!-- Sidebar footer (anchored at bottom) -->
   <div class="sidebar-footer">
     <button class="neu-btn neu-btn-print" onclick="printCards()">
       <span class="print-icon">
@@ -80,7 +74,6 @@
       Print Tags
     </button>
     <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
-      <!-- QR regeneration is automatic now; removed manual regenerate button and public base URL input -->
     </div>
   </div>
 
@@ -162,7 +155,6 @@
   </div>
 </div>
 
-<!-- App modal for confirmations and alerts -->
 <div id="app-modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
   <div class="modal-window">
     <div class="modal-title" id="modal-title">Notice</div>
@@ -182,10 +174,9 @@
   </div>
 </div>
 
-<!-- Floating collapsible search (top-right) -->
 <div class="floating-search" id="floating-search">
   <button class="search-trigger" id="search-trigger" aria-label="Search">
-    <img src="ucn.png" alt="logo" class="search-logo">
+    <img src="assets/images/ucn.png" alt="logo" class="search-logo">
   </button>
   <div class="search-panel" id="search-panel">
     <button class="search-icon" aria-hidden="true">
@@ -201,7 +192,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="main.js?v=20260826.2"></script>
-<script src="print.js?v=20260826.2"></script>
+<script src="assets/js/main.js?v=20260826.2"></script>
+<script src="assets/js/print.js?v=20260826.2"></script>
 </body>
 </html>

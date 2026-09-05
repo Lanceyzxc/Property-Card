@@ -4,7 +4,7 @@ const path = require('path');
 
 // Bind to all interfaces so the dev server is reachable from other devices on the LAN
 const hostname = '0.0.0.0';
-const rootDir = __dirname;
+const rootDir = path.join(__dirname, 'public');
 const defaultPort = Number(process.env.PORT) || 3000;
 
 const mimeTypes = {

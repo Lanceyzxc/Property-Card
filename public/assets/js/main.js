@@ -11,13 +11,12 @@ const departments = [
   { name: "CAS", color: "#ff3131" }
 ];
 
-// Map to your default layout (1st row left GASS, right COTT, etc.)
 const defaultLayout = [
-  "#9a0603", "#8c52ff", // Row 1
-  "#38b6ff", "#737373", // Row 2
-  "#004aad", "#ff751f", // Row 3
-  "#faf901", "#499632", // Row 4
-  "#ffde59", "#ff3131"  // Row 5
+  "#9a0603", "#8c52ff",
+  "#38b6ff", "#737373",
+  "#004aad", "#ff751f",
+  "#faf901", "#499632",
+  "#ffde59", "#ff3131"
 ];
 
 let totalCardCount = 0;
@@ -229,7 +228,6 @@ function saveCardToFirebase(cardWrapper) {
 
   const cardId = data.cardId || `card-${Math.random().toString(36).substring(2, 10)}`;
   data.cardId = cardId;
-  // Persist a short QR URL using the public app origin so mobile scans resolve reliably
   try {
     const baseToUse = getPublicBaseUrl();
     data.qrUrl = `${baseToUse.replace(/\/$/, '')}/${getFormPath(data.propertyNo)}?id=${encodeURIComponent(cardId)}`;
@@ -248,9 +246,6 @@ function saveCardToFirebase(cardWrapper) {
       updateFirebaseStatus(`Save failed for card ${cardId}`, "#9a0603");
     });
 }
-
-// Regeneration button and optional public base URL were removed.
-// QR URLs are auto-generated from window.location.origin on save and render.
 
 function setupFirebaseAutoSave(cardWrapper) {
   if (!cardWrapper) return;
@@ -294,12 +289,10 @@ function renderCardQRCode(cardWrapper) {
   const payload = collectCardPayload(cardWrapper);
   if (!payload) return;
 
-  // Use a short payload only (prefer full URL) to avoid QR code "code length overflow" errors
   const shortText = payload.url || (payload.cardId ? `${getPublicBaseUrl()}${window.location.pathname}?id=${encodeURIComponent(payload.cardId)}` : payload.cardId || '');
   if (!shortText) return;
 
   try {
-    // Use medium error correction to fit more data in small symbols when necessary
     new QRCode(qrContainer, {
       text: shortText,
       width: 86,
@@ -315,7 +308,6 @@ function renderCardQRCode(cardWrapper) {
 function collectCardPayload(cardWrapper) {
   if (!cardWrapper) return null;
   const data = getCardData(cardWrapper);
-  // include card id and link for QR scanning if saved
   const payload = {
     cardId: data.cardId || '',
     icsParNo: data.icsParNo || '',
@@ -367,7 +359,6 @@ function toggleAddPanel() {
   }
   const willOpen = !panel.classList.contains('open');
   panel.classList.toggle('open');
-  // Toggle a class on the floating container so we can animate the FAB
   const container = document.querySelector('.add-card-floating');
   if (container) container.classList.toggle('open', willOpen);
 }
@@ -388,7 +379,6 @@ function toggleSelectPanel() {
   const willOpen = !panel.classList.contains('open');
   panel.classList.toggle('open');
   setSelectionMode(willOpen);
-  // Toggle a class on the floating container so we can animate the FAB
   const container = document.querySelector('.select-card-floating');
   if (container) container.classList.toggle('open', willOpen);
 }
@@ -440,7 +430,6 @@ function createSingleCard(initColor, cardData = null) {
   const currentIndex = uniqueCardId++;
   totalCardCount++;
   
-  // Using a fallback mechanism for the logo image to prevent broken links in preview
   const cardHtml = `
     <div class="card-ui-wrapper" id="card-wrapper-${currentIndex}">
       <div class="card-header-control">
@@ -482,10 +471,8 @@ function createSingleCard(initColor, cardData = null) {
 
   if (!deferCardQrRendering) renderCardQRCode(newCard);
 
-  // Card click toggles selection when selection-mode is active
   newCard.addEventListener('click', function(e) {
     if (!document.body.classList.contains('selection-mode')) return;
-    // Don't toggle when interacting with form controls inside the card
     if (e.target.closest('input') || e.target.closest('select') || e.target.closest('textarea') || e.target.closest('button')) return;
     const cb = newCard.querySelector('.card-select');
     if (!cb) return;
@@ -516,16 +503,13 @@ function createSingleCard(initColor, cardData = null) {
     if (inputs[8]) inputs[8].value = cardData.reference || '';
     if (inputs[9]) inputs[9].value = cardData.itemDescription || '';
     
-    // ENHANCED: Restore quantity and unit from saved card data (for PAR form)
     if (cardData.quantity) newCard.dataset.quantity = cardData.quantity;
     if (cardData.unit) newCard.dataset.unit = cardData.unit;
   }
 
   setupFirebaseAutoSave(newCard);
-  // Attach auto-resize behavior to any textarea inside the new card
   const textareas = newCard.querySelectorAll('textarea.auto-resize');
   textareas.forEach((ta) => {
-    // helper to enforce max two visual rows by trimming overflowing content
     const adjust = (el) => {
       el.style.height = 'auto';
       const cs = window.getComputedStyle(el);
@@ -534,16 +518,12 @@ function createSingleCard(initColor, cardData = null) {
       const padding = parseFloat(cs.paddingTop || 0) + parseFloat(cs.paddingBottom || 0) + 4;
       const maxH = (lineHeight * 2) + padding;
 
-      // shrink visually to fit within two lines
       let desired = Math.min(el.scrollHeight, maxH);
       el.style.height = desired + 'px';
       el.style.overflowY = 'hidden';
 
-      // Preserve the full value for PAR/QR generation. Only constrain the visible textarea box,
-      // not the actual stored description text.
       el.style.height = Math.min(el.scrollHeight, maxH) + 'px';
 
-      // Reduce font slightly when content wraps to second line for better fit
       if (el.scrollHeight > lineHeight + padding) {
         el.style.fontSize = Math.max(14, fontSize - 2) + 'px';
       } else {
@@ -553,19 +533,16 @@ function createSingleCard(initColor, cardData = null) {
 
     ta.addEventListener('input', () => adjust(ta));
     ta.addEventListener('paste', () => setTimeout(() => adjust(ta), 40));
-    // Prevent creating more than one explicit newline (limit to 2 lines)
     ta.addEventListener('keydown', (ev) => {
       if (ev.key === 'Enter') {
         const lines = (ta.value || '').split('\n');
         if (lines.length >= 2) {
           ev.preventDefault();
-          // let adjust handle trimming/ellipsis
           setTimeout(() => adjust(ta), 0);
         }
       }
     });
 
-    // initial adjust
     adjust(ta);
   });
 }
@@ -727,13 +704,11 @@ async function deleteSelectedCards() {
 }
 
 function applyBatchAction() {
-  // This UI now uses explicit icon buttons; keep function for backward compatibility.
   const selectedCards = getSelectedCards();
   if (selectedCards.length === 0) {
     showAlert('Select at least one card to perform a batch action.');
     return;
   }
-  // default no-op
 }
 
 function renderEmptyDepartmentState(departmentName = 'this department') {
@@ -755,12 +730,10 @@ function renderEmptyDepartmentState(departmentName = 'this department') {
   `;
 }
 
-// Reflow cards into pages. If `cardsList` is provided, that list/order is used.
 function reorganizePages(cardsList) {
   const container = document.getElementById('pages-container');
   const cardsToRender = Array.isArray(cardsList) ? cardsList : allCards;
 
-  // Clear the container
   container.innerHTML = '';
 
   if (cardsToRender.length === 0) {
@@ -770,7 +743,6 @@ function reorganizePages(cardsList) {
     return;
   }
 
-  // Put them back in perfect groups of 10
   let currentGrid = null;
   cardsToRender.forEach((card, index) => {
     if (index % 10 === 0) {
@@ -781,7 +753,6 @@ function reorganizePages(cardsList) {
       newPage.appendChild(currentGrid);
       container.appendChild(newPage);
     }
-    currentGrid.appendChild(card); // This moves the card without losing typed text
   });
 }
 
@@ -844,7 +815,6 @@ async function loadCardsFromFirestore() {
     finishMainLoading();
     renderLoadedCardQRCodes();
 
-    // Keep the first screen responsive while the rest of a large collection is built.
     (async () => {
       for (let start = initialBatchSize; start < savedCards.length; start += 20) {
         savedCards.slice(start, start + 20).forEach(renderSavedCard);
@@ -870,7 +840,6 @@ async function loadCardsFromFirestore() {
   }
 }
 
-// Initialize layout on load with saved cards if available
 window.onload = async function() {
   initializeFirebase();
   const loaded = await loadCardsFromFirestore();
@@ -879,7 +848,6 @@ window.onload = async function() {
     finishMainLoading();
   }
   buildFilterOptions();
-  // Wire up filter UI
   const filterSelect = document.getElementById('filter-dept');
   const searchInput = document.getElementById('search-query');
   const addPanel = document.getElementById('add-panel');
@@ -907,11 +875,9 @@ window.onload = async function() {
   const selectPanel = document.getElementById('select-panel');
   const selectFab = document.getElementById('select-fab');
 
-  // Floating search elements
   const floatingSearch = document.getElementById('floating-search');
   const searchPanelEl = document.getElementById('search-panel');
   const searchTrigger = document.getElementById('search-trigger');
-  // `searchInput` is already retrieved above
   if (floatingSearch && searchPanelEl && searchTrigger && searchInput) {
     const openSearch = () => {
       floatingSearch.classList.add('open');
@@ -935,12 +901,9 @@ window.onload = async function() {
     searchInput.addEventListener('keydown', (e) => { if (e.key === 'Escape') { searchInput.blur(); closeSearch(); } });
   }
 
-  // Close panels when user clicks outside of them, but ignore card-area clicks
   document.addEventListener('click', (e) => {
     const target = e.target;
 
-    // If user clicked on a card (or inside it), do nothing — this prevents panels
-    // from closing while interacting with many cards.
     if (target.closest && target.closest('.card-ui-wrapper')) return;
 
     const clickedInsideAdd = addPanel && addPanel.contains(target);
@@ -971,9 +934,7 @@ window.onload = async function() {
     }
   });
 
-  // Keyboard navigation for inputs (Enter / Arrow keys)
   setupKeyboardNavigation();
-  // Public base URL feature removed; QR regeneration and saves use current origin.
   refreshDashboardSummary();
 };
 
@@ -995,7 +956,6 @@ function refreshDashboardSummary() {
   document.getElementById('summary-visible-cards').innerText = visibleCards;
 }
 
-// --- EXCEL PROCESSING LOGIC ---
 function processExcel() {
   const fileInput = document.getElementById('excel-file');
   const statusText = document.getElementById('upload-status');
@@ -1019,13 +979,9 @@ function processExcel() {
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
       
-      // UPDATE: Nilagyan natin ng {range: 4} para i-skip ang unang 4 rows (Titles/Headings). 
-      // Magsisimula siyang magbasa ng exact table headers sa Row 5.
-      // ADDED: raw: false para eksaktong text ng Date ang basahin, hindi serial number.
       const jsonData = XLSX.utils.sheet_to_json(worksheet, {range: 4, defval: "", raw: false});
       
       if(jsonData.length > 0) {
-        // BAGO: Burahin muna ang mga naka-display na cards at i-reset ang bilang bago ilagay ang Excel data
         document.getElementById('pages-container').innerHTML = '';
         totalCardCount = 0;
         uniqueCardId = 0;
@@ -1040,7 +996,7 @@ function processExcel() {
           statusText.style.color = "#9a0603";
           statusText.innerText = "No cards generated: only Expendable items were found.";
         }
-        fileInput.value = ""; // Clear input after reading
+        fileInput.value = "";
       } else {
         statusText.style.color = "#9a0603";
         statusText.innerText = "Excel file is empty or headers not found on Row 5.";
@@ -1055,14 +1011,11 @@ function processExcel() {
   reader.readAsArrayBuffer(file);
 }
 
-// BAGO: Smart function para hanapin ang header kahit may extra spaces o line break sa Excel
 function getExcelValue(row, targetHeader) {
-  // Tatanggalin natin ang lahat ng spaces at line breaks, tapos gagawing small letters
   const target = targetHeader.toLowerCase().replace(/[\s\r\n]+/g, '');
   
   for (let key in row) {
     const currentKey = key.toLowerCase().replace(/[\s\r\n]+/g, '');
-    // Kung nag-match na sila kahit walang spaces, kunin ang value
     if (currentKey === target) {
       return row[key];
     }
@@ -1070,7 +1023,6 @@ function getExcelValue(row, targetHeader) {
   return '';
 }
 
-// BAGO: Helper function para i-format ang "n/a" para maging malaking "N/A" imbes na mablangko
 function formatValue(val) {
   if (val === undefined || val === null || val === '') return '';
   let str = val.toString().trim();
@@ -1140,28 +1092,23 @@ async function populateFromExcel(dataRows) {
     const shouldGenerate = normalizedClassification.includes('semi') || normalizedClassification.includes('non');
 
     if (!classification || !shouldGenerate) {
-      continue; // skip Expendable or undefined classification rows
+      continue;
     }
 
-    // 1. Check if the row has a "Department" header to set the exact color
-    let matchedColor = departments[0].color; // Default fallback color (GASS)
+    let matchedColor = departments[0].color;
     let rowDept = getExcelValue(row, 'Department');
     
     if (rowDept) {
        const cleanDept = rowDept.toString().trim().toUpperCase();
        
-       // BAGO: Hahanapin kung 'kasama' o bahagi ng text ang pangalan ng Department 
-       // kahit may mga dugtong pa ito (e.g., "CFAST-Extension" -> mababasa ang "CFAST")
        const foundDept = departments.find(d => cleanDept.includes(d.name));
        if (foundDept) {
          matchedColor = foundDept.color;
        }
     }
 
-    // 2. Create a new card
     createSingleCard(matchedColor);
     
-    // 3. Target the newly created card
     const newCard = allCards[allCards.length - 1];
     const inputs = newCard.querySelectorAll('.underline-input');
 
@@ -1219,9 +1166,7 @@ async function populateFromExcel(dataRows) {
     newCard.dataset.supplier = supplierFromRow;
     newCard.dataset.acquisitionCost = acquisitionCostFromRow;
     
-    // 4. Map the EXACT Excel cell data gamit ang bago nating Smart Reader (getExcelValue) at formatValue
     
-    // Line 1: ICS/PAR No.
     let ics = formatValue(getExcelValue(row, 'ICS No. (If Applicable)') || getExcelValue(row, 'ICS/PAR No.') || getExcelValue(row, 'ICS No.'));
     let par = formatValue(getExcelValue(row, 'PAR No.(If Applicable)') || getExcelValue(row, 'PAR No.') || getExcelValue(row, 'PAR No'));
     let icsParVal = '';
@@ -1235,13 +1180,10 @@ async function populateFromExcel(dataRows) {
     }
     inputs[0].value = icsParVal;
     
-    // Line 2: Property No.
     inputs[1].value = propertyNoFromRow;
     
-    // Line 3: Date Acquired
     inputs[2].value = dateFromRow;
     
-    // Line 4: Acquisition Cost
     let costStr = formatValue(acquisitionCostFromRow);
     if (costStr.toLowerCase() === 'n/a') {
         inputs[3].value = 'N/A';
@@ -1254,31 +1196,23 @@ async function populateFromExcel(dataRows) {
         }
     }
     
-    // Line 5: Fund
     inputs[4].value = fundFromRow;
     
-    // Line 6: End-User/Location
     inputs[5].value = endUserFromRow;
     
-    // Line 7: Requested by
     inputs[6].value = requestedByFromRow;
     
-    // Line 8: Supplier
     inputs[7].value = supplierFromRow;
     
-    // Line 9: Reference
     inputs[8].value = referenceFromRow;
     
-    // Line 10: Item Description
     inputs[9].value = descriptionFromRow;
     
-    // If this is a textarea with auto-resize, trigger its adjust (if attached)
     if (inputs[9] && inputs[9].tagName === 'TEXTAREA') {
       const ev = new Event('input', { bubbles: true });
       inputs[9].dispatchEvent(ev);
     }
 
-    // ENHANCED: Read Quantity and Unit from Excel (stored invisibly for PAR form)
     let quantity = formatValue(getExcelValue(row, 'Quantity') || getExcelValue(row, 'Qty'));
     if (!quantity || quantity === 'N/A') {
       quantity = '1';
@@ -1291,7 +1225,6 @@ async function populateFromExcel(dataRows) {
     }
     newCard.dataset.unit = unit;
 
-    // Auto-save the imported card immediately after fields are populated
     saveCardToFirebase(newCard);
 
     for (let index = 1; index < cardCount; index++) {
@@ -1305,7 +1238,6 @@ async function populateFromExcel(dataRows) {
 
     generatedCount += cardCount;
 
-    // Yield to the browser regularly so large imports keep the page responsive.
     if (rowIndex % 20 === 19) {
       await new Promise(resolve => setTimeout(resolve, 0));
     }
@@ -1315,17 +1247,14 @@ async function populateFromExcel(dataRows) {
   if (container) container.style.display = previousDisplay;
   renderLoadedCardQRCodes();
 
-  // Refresh department filter options after import
   buildFilterOptions();
   applyFilter();
   return generatedCount;
 }
 
-// Build department options for the filter select
 function buildFilterOptions() {
   const filter = document.getElementById('filter-dept');
   if (!filter) return;
-  // Preserve selected value
   const prev = filter.value || 'ALL';
   filter.innerHTML = '<option value="ALL">All Departments</option>';
   departments.forEach(d => {
@@ -1337,7 +1266,6 @@ function buildFilterOptions() {
   if ([...filter.options].some(o => o.value === prev)) filter.value = prev; else filter.value = 'ALL';
 }
 
-// Apply department filter based on sidebar control
 function getCardDepartmentName(card) {
   const deptSelect = card.querySelector('.dept-select');
   if (deptSelect && deptSelect.selectedIndex >= 0) {
@@ -1354,15 +1282,12 @@ function applyFilter() {
   const searchVal = document.getElementById('search-query').value.trim().toLowerCase();
   const filterVal = filterEl ? filterEl.value : 'ALL';
 
-  // Always start from the full collection of cards so repeated filtering works.
   let cards = [...allCards];
 
-  // Filter by department if requested
   if (filterVal && filterVal !== 'ALL') {
     cards = cards.filter(card => getCardDepartmentName(card) === filterVal);
   }
 
-  // Keyword search across department and card input fields
   if (searchVal) {
     cards = cards.filter(card => {
       const deptSelect = card.querySelector('.dept-select');
@@ -1383,7 +1308,6 @@ function applyFilter() {
     return;
   }
 
-  // Reflow only the resulting cards (this preserves their state)
   reorganizePages(cards);
 }
 
@@ -1413,13 +1337,11 @@ function openAddCardsForCurrentDepartment() {
   addNewCards();
 }
 
-// Keyboard navigation: move focus between `.underline-input` fields
 function setupKeyboardNavigation() {
   document.addEventListener('keydown', function(e) {
     const active = document.activeElement;
     if (!active || !active.classList) return;
     if (!active.classList.contains('underline-input')) return;
-    // If the active element is a textarea (Item Description), do not hijack Enter/Arrow keys
     if (active.tagName === 'TEXTAREA') return;
 
     const inputs = Array.from(document.querySelectorAll('.underline-input'));

@@ -154,7 +154,7 @@ async function renderTags() {
       <label class="tag-select"><input type="checkbox" class="tag-checkbox"><span>Select</span></label>
       <div class="inventory-card">
         <div class="inventory-header">
-          <div class="inventory-logo"><img src="ucn.png" alt="UCN logo"></div>
+          <div class="inventory-logo"><img src="assets/images/ucn.png" alt="UCN logo"></div>
           <div class="inventory-qr" aria-label="QR code for property record"></div>
           <div class="inventory-title">
             <h3>GOVERNMENT PROPERTY</h3>
@@ -229,7 +229,7 @@ function buildInventoryPrintPage(records) {
     const header = document.createElement('div');
     header.className = 'inventory-print-header';
     header.innerHTML = `
-      <div class="inventory-print-header-left"><img src="ucn.png" alt="UCN Logo"></div>
+      <div class="inventory-print-header-left"><img src="assets/images/ucn.png" alt="UCN Logo"></div>
       <div class="inventory-print-header-center">
         <div class="inventory-print-main-title">GOVERNMENT PROPERTY</div>
         <div class="inventory-print-university">University of Camarines Norte</div>
@@ -458,7 +458,6 @@ async function startInventory() {
     populateDepartments();
     renderTags();
 
-    // The UI should not wait for automatic tag-number persistence.
     ensureInventoryTags(inventoryRecords, firestore).catch(error => console.error('Inventory tag assignment error:', error));
   };
 

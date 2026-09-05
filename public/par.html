@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Property Acknowledgment Receipt</title>
     <style>
-        /* General Setup */
         body {
             font-family: Arial, Helvetica, sans-serif;
             font-size: 11px;
@@ -24,7 +23,6 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
 
-        /* Header Elements */
         .appendix {
             text-align: right;
             font-style: italic;
@@ -58,14 +56,12 @@
             padding-right: 100px; /* Aligns it offset from the right edge */
         }
 
-        /* Table Structure */
         table {
             width: 100%;
             border-collapse: collapse;
             border: 2px solid #000; /* Thick outer boundary */
         }
         th, td {
-            /* Thin horizontal lines, thick vertical lines */
             border-top: 1px solid #000;
             border-bottom: 1px solid #000;
             border-left: 2px solid #000;
@@ -75,7 +71,6 @@
             height: 16px; /* Uniform row height for empty lines */
         }
 
-        /* Table Headers */
         th {
             text-align: center;
             vertical-align: middle;
@@ -85,7 +80,6 @@
             font-size: 11px;
         }
 
-        /* Specific Column Formatting */
         .col-qty { width: 8%; text-align: center; }
         .col-unit { width: 7%; text-align: center; }
         .col-desc { width: 44%; }
@@ -93,7 +87,6 @@
         .col-date { width: 10%; }
         .col-amount { width: 14%; text-align: right; padding-right: 5px;}
 
-        /* Signatories Box */
         .footer-row td {
             border-top: 2px solid #000; /* Thick separator for footer */
             height: 160px;
@@ -240,7 +233,6 @@
         .ics-preview .ics-data-cell {
             text-align: center;
         }
-        /* Page Number */
         .page-number {
             text-align: center;
             margin-top: 50px;
@@ -285,7 +277,6 @@
                 <td class="col-date" id="val-date"></td>
                 <td class="col-amount" id="val-amount"></td>
             </tr>
-            <!-- Empty Rows for grid effect -->
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
             <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
@@ -433,11 +424,9 @@
 </body>
 </html>
 
-<!-- Firestore data binding for QR viewer -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-    // Firebase config (same as main app)
     const firebaseConfig = {
   apiKey: "AIzaSyA1q2b0fyIidVRspGg31_xF_vpOu8dYRug",
   authDomain: "ucn-property-tag-b7e0a.firebaseapp.com",
@@ -463,7 +452,7 @@
     (function populateFromQuery() {
         const params = new URLSearchParams(window.location.search);
         const id = params.get('id');
-        if (!id) return; // no id, nothing to show
+        if (!id) return;
 
         if (!db) {
             console.warn('Firestore not available');
@@ -477,7 +466,6 @@
                     return;
                 }
                 const data = doc.data();
-                // Map all important fields from Firestore, including imported Excel values.
                 setText('val-fund', data.fund || '');
                 setText('val-fund-ics', data.fund || '');
                 setText('val-parno', data.icsParNo || id);
