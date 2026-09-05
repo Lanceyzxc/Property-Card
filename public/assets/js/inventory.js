@@ -49,6 +49,7 @@ async function ensureInventoryTags(records, firestore) {
     .filter(record => !text(record.inventoryTag))
     .sort((left, right) => inventoryTagSortKey(left).localeCompare(inventoryTagSortKey(right)));
 
+  // Stay below Firestore's 500-write batch limit so metadata updates remain reliable.
   for (let start = 0; start < missingRecords.length; start += 450) {
     const batch = firestore.batch();
     const batchRecords = missingRecords.slice(start, start + 450);
@@ -146,6 +147,7 @@ async function renderTags() {
   }
 
   grid.innerHTML = '';
+  // Render in small batches to keep search and scrolling responsive with large inventories.
   const batchSize = 40;
   for (let start = 0; start < records.length; start += batchSize) {
     if (renderGeneration !== inventoryRenderGeneration) return;

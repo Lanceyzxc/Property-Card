@@ -22,6 +22,7 @@ function printCards(cardsToPrint) {
   const fieldColorMode = localStorage.getItem('fieldColorMode') || 'enhanced';
   printSheet.classList.toggle('field-color-plain', fieldColorMode === 'plain');
 
+  // Keep this page size synchronized with the print CSS grid; changing it can cause cards to overlap or spill onto another sheet.
   cards.forEach((cardWrapper, index) => {
     if (index % 10 === 0) {
       const page = document.createElement('div');

@@ -52,6 +52,7 @@ function renderLoadedCardQRCodes() {
   const cards = [...allCards];
 
   function renderNextBatch() {
+    // Yield between batches so QR generation does not block editing or scrolling.
     const batchEnd = Math.min(position + 8, cards.length);
     for (; position < batchEnd; position += 1) renderCardQRCode(cards[position]);
     if (position < cards.length) window.requestAnimationFrame(renderNextBatch);
