@@ -2,6 +2,29 @@
 
 This guide is for office staff and anyone who uses the application to create, review, and print property records.
 
+## Quick Reference
+
+| Task | Where to go |
+|---|---|
+| Upload an Excel list | Property Cards page |
+| Create a blank property card | Property Cards page, **Add New Cards** |
+| Find a saved record | Property Cards search or department filter |
+| Print property tags | Property Cards page, **Print Tags** |
+| View inventory labels | **Inventory Tags** page |
+| Print selected inventory labels | Inventory Tags page, select tags, then **Print Selected** |
+| Open a linked form | Scan the QR code on a property card or inventory tag |
+
+## Before You Start
+
+Prepare the following:
+
+- A supported browser such as Chrome, Edge, or Firefox.
+- Internet access.
+- An approved Excel or CSV file when importing records.
+- The correct department and property information for review.
+
+Do not upload a spreadsheet until it has been checked. Imported records can become live saved records in the system.
+
 ## What This Application Does
 
 The UCN ProCard System helps the Supply and Property Management Office:
@@ -56,6 +79,19 @@ The importer recognizes common headings such as:
 
 Capitalization and spaces do not matter, but the heading still needs to describe the correct information.
 
+### After importing
+
+Review the generated cards before printing or closing the browser:
+
+1. Confirm the number of generated cards.
+2. Check the department color and department name.
+3. Check the property number, description, quantity, and acquisition cost.
+4. Complete missing information.
+5. Wait briefly after editing so changes can be saved.
+6. Refresh or search for a record to confirm the saved information.
+
+If a property number contains a range such as `ABC-001 to ABC-005`, the system may create a separate card for each number in the range.
+
 ## Working With Property Cards
 
 ### Edit a card
@@ -63,6 +99,28 @@ Capitalization and spaces do not matter, but the heading still needs to describe
 Click or type into a card field to add or correct information. Changes are saved automatically after a short delay.
 
 Each card has a QR code. The code opens the record's form when scanned.
+
+Common card fields include:
+
+| Field | Meaning |
+|---|---|
+| ICS/PAR No. | Official acknowledgment or custody document number |
+| Property No. | Unique property or asset number |
+| Date Acquired | Date the item was acquired or delivered |
+| Acquisition Cost | Recorded cost or amount of the item |
+| Fund | Fund or fund cluster used for the purchase |
+| End-User/Location | Person, office, or location responsible for the item |
+| Requested By | Person who requested or will use the item |
+| Supplier | Supplier or vendor |
+| P.O/J.O/Contract Ref | Purchase order, job order, or contract reference |
+| Item Description | Description of the property |
+
+Save behavior:
+
+- Property card fields save automatically after typing or changing a value.
+- A short delay is normal while the save is processed.
+- A QR code may update after the record is saved.
+- If the browser is offline, the change may not reach the shared records.
 
 ### Filter and search
 
@@ -93,6 +151,18 @@ Open **Batch Actions** to select cards.
 
 Always check the browser print preview before printing a full batch.
 
+### Recommended print checks
+
+Before confirming the print job, verify:
+
+- The correct cards are included.
+- The property numbers and descriptions are readable.
+- QR codes are visible.
+- The paper size and orientation match the office form or label stock.
+- Browser scale and margins do not shrink or cut off the cards.
+
+The property card print layout is designed to place up to ten cards on a print page.
+
 ## Working With Inventory Tags
 
 1. Open **Inventory Tags** from the Property Cards page.
@@ -104,6 +174,23 @@ Always check the browser print preview before printing a full batch.
 
 Missing inventory numbers are assigned automatically in the format `YY-NNNN`, for example `26-0001`.
 
+### Inventory tag fields
+
+| Field | Meaning |
+|---|---|
+| Inventory Tag No. | System-assigned inventory label number |
+| Office/Location | Department or location where the item is kept |
+| Description | Name or description of the item |
+| Property No. | Property record number |
+| Acquisition Cost | Recorded purchase or acquisition cost |
+| Date Acquired | Date the item was acquired |
+| Person Accountable | Person responsible for the item |
+| Date Counted | Date the item was physically counted |
+| Inventory Committee | Committee or representative information |
+| Property Custodian | Property custodian information |
+
+Inventory tag edits are saved when you click outside the edited field. Allow a moment for the update before refreshing the page.
+
 ## QR Codes And Forms
 
 The form depends on the property number:
@@ -111,7 +198,19 @@ The form depends on the property number:
 - A property number containing `SPLV` or `SPHV` opens an **Inventory Custodian Slip (ICS)**.
 - Other property numbers open a **Property Acknowledgment Receipt (PAR)**.
 
+To use a QR code:
+
+1. Open the camera or QR scanner on a phone.
+2. Scan the code.
+3. Open the displayed link.
+4. Confirm that the property number and item description are correct.
+5. Print the form if a paper copy is required.
+
 ## Troubleshooting
+
+### The page is still loading
+
+Check the internet connection and wait a few seconds. Reload the page if it remains stuck. If other websites work but this application does not, report the issue to the application administrator.
 
 ### No cards appear
 
@@ -125,6 +224,18 @@ Check that the data is on the first worksheet, the headings are on row 5, and th
 
 For a property card, wait briefly after editing. For an inventory tag, click outside the edited field. Refresh the page to confirm the saved value.
 
+### A department or card is missing from the filter
+
+Check the department value on the card. Filters use the department saved on the record. Reset the filter and search, then reload the page if necessary.
+
+### The QR code does not open
+
+Check that the phone has internet access. If the link opens but shows the wrong form, check whether the property number contains `SPLV` or `SPHV`.
+
+### Duplicate records appear
+
+Do not re-import the same spreadsheet immediately. First search for the property number and confirm whether the record already exists. Ask the administrator to review duplicates before deleting anything.
+
 ### Printing looks wrong
 
 In the browser print dialog, check paper size, scale, margins, and orientation. Review the preview before printing.
@@ -132,3 +243,12 @@ In the browser print dialog, check paper size, scale, margins, and orientation. 
 ## Important Reminder
 
 The application stores live operational records. Confirm edits and printed output before processing a large batch, and follow the office's approved backup and records procedures.
+
+## End-of-Task Checklist
+
+- [ ] All imported records were reviewed.
+- [ ] Missing fields were completed.
+- [ ] Property and inventory numbers were checked.
+- [ ] Required forms or tags were printed and reviewed.
+- [ ] Changes were allowed time to save.
+- [ ] The source spreadsheet was retained according to office policy.

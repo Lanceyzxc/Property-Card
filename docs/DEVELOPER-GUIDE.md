@@ -14,6 +14,22 @@ propertyTags/{cardId}
 
 The Property Cards and Inventory Tags pages use this same collection.
 
+## Architecture At A Glance
+
+```mermaid
+flowchart LR
+    A[Browser] --> B[public/index.html]
+    A --> C[public/inventory.html]
+    B --> D[main.js]
+    B --> E[print.js]
+    C --> F[inventory.js]
+    D --> G[(Firebase Firestore)]
+    F --> G
+    D --> H[par.html or ics.html]
+```
+
+The server only delivers static files. Firebase operations happen from browser JavaScript, so most functional changes belong in `public/assets/js/` rather than in `server.js`.
+
 ## Project Structure
 
 ```text
@@ -63,6 +79,25 @@ npm start
 The default port is `3000`. If that port is busy, `server.js` tries the next few ports automatically.
 
 Open the URL printed in the terminal. The server serves files from `public/` and maps `/` to `public/index.html`.
+
+### Useful local URLs
+
+```text
+/                  Property Cards page
+/index.html        Property Cards page
+/inventory.html    Inventory Tags page
+/par.html?id=ID    Property Acknowledgment Receipt for a record
+/ics.html?id=ID    Inventory Custodian Slip for a record
+```
+
+### Browser checks
+
+When testing in a browser, inspect:
+
+1. The Console for JavaScript and Firebase errors.
+2. The Network panel for failed CDN or Firestore requests.
+3. The Application/Storage panel for the `fieldColorMode` preference.
+4. Print Preview for card dimensions, page breaks, and QR visibility.
 
 ### Check JavaScript syntax
 
@@ -117,6 +152,44 @@ These are printable document templates. The form selected for a QR link is based
 - Values containing `SPLV` or `SPHV` use `ics.html`.
 - Other values use `par.html`.
 
+## Runtime Data Flow
+
+### Property Cards
+
+1. `main.js` initializes Firebase when the page loads.
+2. Existing documents are read from `propertyTags`.
+3. Cards are rendered in batches to keep the browser responsive.
+4. User edits trigger a debounced save.
+5. The saved record receives a QR URL based on its property number.
+6. Print operations build a temporary print-only DOM structure.
+
+### Inventory Tags
+
+1. `inventory.js` reads the same Firestore collection.
+2. Missing inventory numbers are assigned and written back in batches.
+3. Search and department filters operate on the loaded records.
+4. Inline edits are written when the field loses focus.
+5. QR codes are rendered lazily as tags become visible.
+6. Printing builds a temporary inventory print sheet.
+
+## Excel Import Mapping
+
+The importer uses the first worksheet and starts reading data with row 5 as the header row. Header comparison removes spaces and ignores case.
+
+| Application value | Primary or alternate headers |
+|---|---|
+| Classification | `Inventory/Property Classification` |
+| Description | `Item Description`, `Items Description`, `Description`, `Article`, `Item Name`, `Property Description` |
+| Property number | `Property No.`, `Property No./Item No.`, `Item No.`, `Asset No.` |
+| Quantity | `Quantity`, `Qty`, `Qty.`, `No. of Units` |
+| Unit | `Unit`, `Unit of Measure`, `UOM` |
+| Date acquired | `Date Acquired`, `Date Delivered`, `Date of Acquisition`, `Acquired Date` |
+| Cost | `Acquisition Cost`, `Unit Cost`, `Cost`, `Amount`, `Total Cost` |
+| Reference | `P.O/J.O/Contract Ref`, `PO/J.O/Contract Ref`, `Reference`, `Reference No.`, `Contract Reference` |
+| Person/location | `End-User/Location`, `End User`, `End-User`, `Location`, `User/Location` |
+
+Rows are eligible when the normalized classification contains `semi` or `non`. Quantity and property-number ranges can create multiple cards from one spreadsheet row.
+
 ## Firestore Data Model
 
 Common fields in `propertyTags/{cardId}` include:
@@ -148,6 +221,19 @@ qrUrl
 savedAt
 ```
 
+### Field groups
+
+| Group | Fields |
+|---|---|
+| Identity | `cardId`, `propertyNo`, `icsParNo`, `inventoryTag` |
+| Item details | `itemDescription`, `quantity`, `unit`, `serialNo` |
+| Acquisition | `dateAcquired`, `acquisitionCost`, `fund`, `supplier`, `reference` |
+| Responsibility | `endUserLocation`, `requestedBy`, `dateCounted`, `propertyCustodian` |
+| Presentation | `dept`, `color`, `qrUrl`, `savedAt` |
+| Inventory signatures | `coaRepresentative`, `propertyCustodian` |
+
+There is no schema migration framework in this repository. New optional fields should be introduced defensively so older documents without the field continue to render correctly.
+
 When adding a field, update every relevant boundary:
 
 1. Card data collection and persistence in `main.js`.
@@ -171,6 +257,17 @@ Hosting configuration:
 - `firebase.json` serves the `public/` directory.
 - `.firebaserc` selects the Firebase project `ucn-property-tag-b7e0a`.
 
+### Firebase change checklist
+
+When switching projects or environments:
+
+1. Update the configuration in both browser scripts.
+2. Confirm the Firestore project ID and Hosting project.
+3. Verify Firestore rules permit the required reads and writes.
+4. Test loading, editing, deleting, and inventory numbering.
+5. Generate a QR code and confirm it opens the intended public URL.
+6. Do not deploy until the target environment is confirmed.
+
 ## Deployment
 
 A typical Firebase Hosting deployment is:
@@ -182,6 +279,18 @@ firebase deploy --only hosting
 ```
 
 Before deployment, verify the selected Firebase project, public URL, Firestore rules, and the intended version of the browser scripts. This application writes live operational records.
+
+### Pre-deployment checklist
+
+- [ ] `git diff --check` passes.
+- [ ] All JavaScript files pass `node --check`.
+- [ ] Property Cards load existing Firestore records.
+- [ ] Inventory Tags load and display the same records.
+- [ ] A property-card edit saves successfully.
+- [ ] An inventory-tag edit saves successfully.
+- [ ] QR links open the expected PAR or ICS form.
+- [ ] Property and inventory print previews are readable.
+- [ ] Firebase project and Firestore rules are verified.
 
 ## External Browser Libraries
 
@@ -215,6 +324,33 @@ Verify that the first worksheet has headings on row 5 and that the classificatio
 
 Check browser print settings first. Then inspect the print CSS and the ten-card page batching in `print.js` or `inventory.js`. Keep card dimensions and grid gaps synchronized with the print styles.
 
+### A change appears locally but not in Firestore
+
+Check whether the record has a valid `cardId`, whether Firebase initialized successfully, and whether the write promise reports an error. Test with a known existing document before changing rendering code.
+
+### Inventory numbers are duplicated
+
+Inspect existing `inventoryTag` values and confirm that assignment is running against the current collection snapshot. Do not manually rerun numbering without checking the existing year prefix and sequence values.
+
+### A page works locally but not after deployment
+
+Check relative asset paths, CDN availability, Firebase Hosting output, the production hostname used by `getPublicBaseUrl()`, and browser caching caused by version query strings.
+
+## Change Workflow
+
+For a small feature or bug fix:
+
+1. Identify the owning page and script.
+2. Reproduce the behavior in a local browser.
+3. Make the smallest focused change.
+4. Run JavaScript syntax checks and `git diff --check`.
+5. Test the affected workflow with Firestore connected.
+6. Test print output if the change affects card dimensions or content.
+7. Update the user guide when visible behavior changes.
+8. Update this guide when architecture, setup, or data behavior changes.
+
+Avoid editing generated or unrelated files. Preserve existing Firestore field names unless a migration plan exists.
+
 ## Operational Risks And Maintenance Notes
 
 - Firestore is the source of truth for saved records.
@@ -223,3 +359,5 @@ Check browser print settings first. Then inspect the print CSS and the ten-card 
 - Test imports with a copy of production spreadsheets.
 - Confirm print output before large print runs.
 - Keep the user guide updated when visible workflows or button names change.
+- Avoid exposing additional sensitive data in QR URLs; QR links currently identify records through a document ID.
+- Treat changes to print dimensions, Firestore fields, and Firebase configuration as higher-risk changes requiring end-to-end testing.
