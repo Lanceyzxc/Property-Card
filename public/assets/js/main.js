@@ -27,6 +27,7 @@ let cardsStillRendering = false;
 let firebaseFirestore = null;
 let firebaseInitialized = false;
 let deferCardQrRendering = false;
+const appSplashStartedAt = Date.now();
 
 function getPublicBaseUrl() {
   const origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://ucnprocards.vercel.app';
@@ -45,6 +46,14 @@ function finishMainLoading() {
   container.querySelectorAll('.main-loading-card').forEach((loadingCard) => loadingCard.remove());
   container.classList.remove('is-loading');
   container.setAttribute('aria-busy', 'false');
+}
+
+function finishAppSplash() {
+  const splash = document.getElementById('app-splash');
+  if (!splash) return;
+  const minimumDisplayTime = 900;
+  const remainingTime = Math.max(0, minimumDisplayTime - (Date.now() - appSplashStartedAt));
+  window.setTimeout(() => splash.classList.add('is-hidden'), remainingTime);
 }
 
 function renderLoadedCardQRCodes() {
@@ -937,6 +946,7 @@ window.onload = async function() {
 
   setupKeyboardNavigation();
   refreshDashboardSummary();
+  finishAppSplash();
 };
 
 function refreshDashboardSummary() {
