@@ -763,6 +763,8 @@ function reorganizePages(cardsList) {
       newPage.appendChild(currentGrid);
       container.appendChild(newPage);
     }
+
+    currentGrid.appendChild(card);
   });
 }
 
