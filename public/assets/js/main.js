@@ -27,6 +27,7 @@ let cardsStillRendering = false;
 let firebaseFirestore = null;
 let firebaseInitialized = false;
 let deferCardQrRendering = false;
+let cardQrObserver = null;
 const appSplashStartedAt = Date.now();
 
 function normalizeDepartmentName(value) {
@@ -82,17 +83,30 @@ function finishAppSplash() {
 }
 
 function renderLoadedCardQRCodes() {
-  let position = 0;
-  const cards = [...allCards];
+  allCards.forEach(observeCardQRCode);
+}
 
-  function renderNextBatch() {
-    // Yield between batches so QR generation does not block editing or scrolling.
-    const batchEnd = Math.min(position + 8, cards.length);
-    for (; position < batchEnd; position += 1) renderCardQRCode(cards[position]);
-    if (position < cards.length) window.requestAnimationFrame(renderNextBatch);
+function observeCardQRCode(cardWrapper) {
+  if (!cardWrapper || !window.QRCode) return;
+  const qrContainer = cardWrapper.querySelector('.qr-box');
+  if (!qrContainer || qrContainer.querySelector('img, canvas')) return;
+
+  if (!window.IntersectionObserver) {
+    renderCardQRCode(cardWrapper);
+    return;
   }
 
-  window.requestAnimationFrame(renderNextBatch);
+  if (!cardQrObserver) {
+    cardQrObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        observer.unobserve(entry.target);
+        renderCardQRCode(entry.target.closest('.card-ui-wrapper'));
+      });
+    }, { root: document.querySelector('.main-content'), rootMargin: '700px 0px' });
+  }
+
+  cardQrObserver.observe(qrContainer);
 }
 
 function yieldToBrowser() {
@@ -511,7 +525,7 @@ function createSingleCard(initColor, cardData = null) {
   newCard.dataset.cardId = cardData && cardData.cardId ? cardData.cardId : `card-${currentIndex}`;
   allCards.push(newCard);
 
-  if (!deferCardQrRendering) renderCardQRCode(newCard);
+  if (!deferCardQrRendering) observeCardQRCode(newCard);
 
   newCard.addEventListener('click', function(e) {
     if (!document.body.classList.contains('selection-mode')) return;
@@ -824,8 +838,12 @@ async function loadCardsFromFirestore() {
   updateFirebaseStatus("Loading saved cards...", "#004aad");
 
   try {
+    let cardsQuery = firebaseFirestore.collection('propertyTags');
+    if (!isMainDepartment()) {
+      cardsQuery = cardsQuery.where('dept', '==', normalizeDepartmentName(window.currentDepartment));
+    }
     const snapshot = await Promise.race([
-      firebaseFirestore.collection('propertyTags').get(),
+      cardsQuery.get(),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore load timed out')), 8000))
     ]);
     if (snapshot.empty) {

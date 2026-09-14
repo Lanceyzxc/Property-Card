@@ -512,14 +512,20 @@ async function startInventory() {
     ensureInventoryTags(inventoryRecords, firestore).catch(error => console.error('Inventory tag assignment error:', error));
   };
 
+  let unsubscribe = null;
   try {
-    const initialSnapshot = await Promise.race([
-      firestore.collection('propertyTags').get(),
+    const firstSnapshot = new Promise((resolve, reject) => {
+      unsubscribe = firestore.collection('propertyTags').onSnapshot((snapshot) => {
+        renderSnapshot(snapshot);
+        resolve(snapshot);
+      }, reject);
+    });
+    await Promise.race([
+      firstSnapshot,
       new Promise((_, reject) => setTimeout(() => reject(new Error('Inventory load timed out')), 8000))
     ]);
-    await renderSnapshot(initialSnapshot);
-    firestore.collection('propertyTags').onSnapshot(renderSnapshot, handleInventoryLoadError);
   } catch (error) {
+    if (unsubscribe) unsubscribe();
     handleInventoryLoadError(error);
   }
 

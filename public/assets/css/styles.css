@@ -453,6 +453,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 520px;
 }
 
 .card-header-control {
