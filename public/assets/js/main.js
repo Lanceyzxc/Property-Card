@@ -1,5 +1,5 @@
 const departments = [
-  { name: "GASS", color: "#9a0603" },
+  { name: "MAIN", color: "#9a0603" },
   { name: "COTT", color: "#8c52ff" },
   { name: "CFAST", color: "#38b6ff" },
   { name: "CCMS", color: "#737373" },
@@ -28,6 +28,31 @@ let firebaseFirestore = null;
 let firebaseInitialized = false;
 let deferCardQrRendering = false;
 const appSplashStartedAt = Date.now();
+
+function normalizeDepartmentName(value) {
+  const department = String(value || '').trim().toUpperCase();
+  return department === 'GASS' ? 'MAIN' : department;
+}
+
+function isMainDepartment() {
+  return normalizeDepartmentName(window.currentDepartment) === 'MAIN';
+}
+
+function getCurrentDepartmentColor() {
+  const currentDepartment = normalizeDepartmentName(window.currentDepartment);
+  return departments.find(department => department.name === currentDepartment)?.color || departments[0].color;
+}
+
+function setDepartmentScopedControls() {
+  const filterGroup = document.getElementById('filter-dept')?.closest('.control-group');
+  const addDepartmentSelect = document.getElementById('add-dept-select');
+  const addDepartmentLabel = addDepartmentSelect?.previousElementSibling;
+  const scopedToMain = isMainDepartment();
+
+  if (filterGroup) filterGroup.hidden = !scopedToMain;
+  if (addDepartmentSelect) addDepartmentSelect.hidden = !scopedToMain;
+  if (addDepartmentLabel) addDepartmentLabel.hidden = !scopedToMain;
+}
 
 function getPublicBaseUrl() {
   const origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://ucnprocards.vercel.app';
@@ -77,7 +102,7 @@ function yieldToBrowser() {
 function hasActiveCardFilter() {
   const filterEl = document.getElementById('filter-dept');
   const searchEl = document.getElementById('search-query');
-  return (filterEl && filterEl.value !== 'ALL') || (searchEl && searchEl.value.trim());
+  return !isMainDepartment() || (filterEl && filterEl.value !== 'ALL') || (searchEl && searchEl.value.trim());
 }
 
 const firebaseConfig = {
@@ -187,8 +212,9 @@ function debounce(func, wait) {
 function getCardData(cardWrapper) {
   const cardId = cardWrapper.dataset.cardId || '';
   const deptSelect = cardWrapper.querySelector('.dept-select');
-  const dept = deptSelect ? deptSelect.options[deptSelect.selectedIndex]?.text.trim() : '';
-  const color = deptSelect ? deptSelect.value : departments[0].color;
+  const selectedDept = deptSelect ? deptSelect.options[deptSelect.selectedIndex]?.text.trim() : '';
+  const dept = isMainDepartment() ? normalizeDepartmentName(selectedDept) : normalizeDepartmentName(window.currentDepartment);
+  const color = isMainDepartment() && deptSelect ? deptSelect.value : getCurrentDepartmentColor();
   const inputs = cardWrapper.querySelectorAll('.underline-input');
   const quantity = cardWrapper.dataset.quantity || '';
   const unit = cardWrapper.dataset.unit || '';
@@ -351,7 +377,9 @@ function generateOptions(selectedColor) {
 
 function addNewCards() {
   const qty = parseInt(document.getElementById('add-qty').value) || 1;
-  const color = document.getElementById('add-dept-select').value;
+  const color = isMainDepartment()
+    ? document.getElementById('add-dept-select').value
+    : getCurrentDepartmentColor();
   for(let i = 0; i < qty; i++) {
     createSingleCard(color);
   }
@@ -401,7 +429,9 @@ function closeSelectPanel() {
 
 function addCards(amount) {
   for (let i = 0; i < amount; i++) {
-    let defaultColor = (uniqueCardId < 10) ? defaultLayout[uniqueCardId] : departments[0].color;
+    const defaultColor = isMainDepartment()
+      ? ((uniqueCardId < defaultLayout.length) ? defaultLayout[uniqueCardId] : departments[0].color)
+      : getCurrentDepartmentColor();
     createSingleCard(defaultColor);
   }
 }
@@ -463,7 +493,7 @@ function createSingleCard(initColor, cardData = null) {
           <div class="form-row"><label>Date Acquired:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>Acquisition Cost:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>Fund:</label><input type="text" class="underline-input"></div>
-          <div class="form-row"><label>End-User/Location:</label><input type="text" class="underline-input"></div>
+          <div class="form-row"><label>Location:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>Requested by:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>Supplier:</label><input type="text" class="underline-input"></div>
           <div class="form-row"><label>P.O/J.O/Contract Ref:</label><textarea class="underline-input auto-resize" rows="1"></textarea></div>
@@ -476,6 +506,8 @@ function createSingleCard(initColor, cardData = null) {
 
   lastPageGrid.insertAdjacentHTML('beforeend', cardHtml);
   const newCard = lastPageGrid.lastElementChild;
+  const departmentSelect = newCard.querySelector('.dept-select');
+  if (!isMainDepartment() && departmentSelect) departmentSelect.hidden = true;
   newCard.dataset.cardId = cardData && cardData.cardId ? cardData.cardId : `card-${currentIndex}`;
   allCards.push(newCard);
 
@@ -494,7 +526,7 @@ function createSingleCard(initColor, cardData = null) {
   if (cardData) {
     const deptSelect = newCard.querySelector('.dept-select');
     if (deptSelect && cardData.dept) {
-      const optionToSelect = Array.from(deptSelect.options).find(opt => opt.text.trim() === cardData.dept);
+      const optionToSelect = Array.from(deptSelect.options).find(opt => normalizeDepartmentName(opt.text) === normalizeDepartmentName(cardData.dept));
       if (optionToSelect) {
         optionToSelect.selected = true;
         updateCardColor(deptSelect, currentIndex);
@@ -853,13 +885,27 @@ async function loadCardsFromFirestore() {
 }
 
 window.onload = async function() {
+  const sessionDepartment = sessionStorage.getItem('propertyCardDepartment');
+  const rememberedDepartment = localStorage.getItem('propertyCardDepartment');
+  const hasRememberedLogin = localStorage.getItem('propertyCardRememberLogin') === 'true';
+  const currentDepartment = normalizeDepartmentName(sessionDepartment || (hasRememberedLogin ? rememberedDepartment : null));
+  if (!currentDepartment) {
+    const loginDelay = Math.max(0, 900 - (Date.now() - appSplashStartedAt));
+    window.setTimeout(() => window.location.replace('login.html'), loginDelay);
+    return;
+  }
+
+  sessionStorage.setItem('propertyCardDepartment', currentDepartment);
+  window.currentDepartment = currentDepartment;
+  finishAppSplash();
   initializeFirebase();
   const loaded = await loadCardsFromFirestore();
   if (!loaded) {
-    addCards(10);
+    addCards(isMainDepartment() ? departments.length : 2);
     finishMainLoading();
   }
   buildFilterOptions();
+  setDepartmentScopedControls();
   const filterSelect = document.getElementById('filter-dept');
   const searchInput = document.getElementById('search-query');
   const addPanel = document.getElementById('add-panel');
@@ -947,23 +993,32 @@ window.onload = async function() {
   });
 
   setupKeyboardNavigation();
+  applyFilter();
   refreshDashboardSummary();
-  finishAppSplash();
 };
 
 function refreshDashboardSummary() {
-  const totalCards = cardsStillRendering ? knownCardCount : allCards.length;
   const filterEl = document.getElementById('filter-dept');
   const searchEl = document.getElementById('search-query');
-  const hasActiveFilter = (filterEl && filterEl.value !== 'ALL') || (searchEl && searchEl.value.trim());
-  const visibleCards = hasActiveFilter
-    ? document.querySelectorAll('.card-ui-wrapper').length
-    : totalCards;
-  const uniqueDepartments = new Set();
-  allCards.forEach(card => {
-    const select = card.querySelector('.dept-select');
-    if (select) uniqueDepartments.add(select.options[select.selectedIndex]?.text.trim() || '');
+  const filterValue = filterEl ? filterEl.value : 'ALL';
+  const searchValue = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  const scopedCards = allCards.filter(card => {
+    const department = getCardDepartmentName(card);
+    const matchesDepartment = isMainDepartment()
+      ? (filterValue === 'ALL' || department === normalizeDepartmentName(filterValue))
+      : department === normalizeDepartmentName(window.currentDepartment);
+    if (!matchesDepartment) return false;
+    if (!searchValue) return true;
+
+    const fields = Array.from(card.querySelectorAll('.underline-input'));
+    const searchableText = `${department} ${fields.map(field => field.value || '').join(' ')}`.toLowerCase();
+    return searchableText.includes(searchValue);
   });
+
+  const totalCards = isMainDepartment()
+    ? (cardsStillRendering ? knownCardCount : allCards.length)
+    : scopedCards.length;
+  const visibleCards = scopedCards.length;
 
   document.getElementById('summary-total-cards').innerText = totalCards;
   document.getElementById('summary-visible-cards').innerText = visibleCards;
@@ -1100,6 +1155,14 @@ async function populateFromExcel(dataRows) {
 
   for (let rowIndex = 0; rowIndex < dataRows.length; rowIndex += 1) {
     const row = dataRows[rowIndex];
+    const rowDepartmentValue = formatValue(getExcelValue(row, 'Department'));
+    const normalizedRowDepartment = normalizeDepartmentName(rowDepartmentValue);
+
+    const currentDepartment = normalizeDepartmentName(window.currentDepartment);
+    if (!isMainDepartment() && !normalizedRowDepartment.includes(currentDepartment)) {
+      continue;
+    }
+
     const classification = formatValue(getExcelValue(row, 'Inventory/Property Classification'));
     const normalizedClassification = classification.toLowerCase().replace(/[\s\u00A0]+/g, ' ').trim();
     const shouldGenerate = normalizedClassification.includes('semi') || normalizedClassification.includes('non');
@@ -1109,10 +1172,10 @@ async function populateFromExcel(dataRows) {
     }
 
     let matchedColor = departments[0].color;
-    let rowDept = getExcelValue(row, 'Department');
+    let rowDept = isMainDepartment() ? rowDepartmentValue : window.currentDepartment;
     
     if (rowDept) {
-       const cleanDept = rowDept.toString().trim().toUpperCase();
+       const cleanDept = normalizeDepartmentName(rowDept);
        
        const foundDept = departments.find(d => cleanDept.includes(d.name));
        if (foundDept) {
@@ -1156,7 +1219,7 @@ async function populateFromExcel(dataRows) {
     const dateCountedFromRow = getPreferredExcelValue(row, ['Date Counted', 'Counted Date']);
     const dateFromRow = getPreferredExcelValue(row, ['Date Acquired', 'Date Delivered', 'Date of Acquisition', 'Acquired Date']);
     const fundFromRow = getPreferredExcelValue(row, ['Fund', 'Fund Cluster']);
-    const endUserFromRow = getPreferredExcelValue(row, ['End-User/Location', 'End User', 'End-User', 'Location', 'User/Location']);
+    const endUserFromRow = formatValue(getExcelValue(row, 'Department'));
     const requestedByFromRow = getPreferredExcelValue(row, ['Requested by', 'Requested By', 'Requestor', 'End User', 'End-User']);
     const supplierFromRow = getPreferredExcelValue(row, ['Supplier', 'Supplier Name', 'Vendor']);
     const acquisitionCostFromRow = getPreferredExcelValue(row, ['Acquisition Cost', 'Unit Cost', 'Cost', 'Amount', 'Total Cost']);
@@ -1283,11 +1346,11 @@ function getCardDepartmentName(card) {
   const deptSelect = card.querySelector('.dept-select');
   if (deptSelect && deptSelect.selectedIndex >= 0) {
     const deptText = deptSelect.options[deptSelect.selectedIndex]?.text.trim();
-    if (deptText) return deptText;
+    if (deptText) return normalizeDepartmentName(deptText);
   }
 
   const inputs = card.querySelectorAll('.underline-input');
-  return inputs[4] ? inputs[4].value.trim() : '';
+  return inputs[4] ? normalizeDepartmentName(inputs[4].value) : '';
 }
 
 function applyFilter() {
@@ -1297,15 +1360,17 @@ function applyFilter() {
 
   let cards = [...allCards];
 
-  if (filterVal && filterVal !== 'ALL') {
-    cards = cards.filter(card => getCardDepartmentName(card) === filterVal);
+  if (isMainDepartment() && filterVal && filterVal !== 'ALL') {
+    cards = cards.filter(card => getCardDepartmentName(card) === normalizeDepartmentName(filterVal));
+  } else if (!isMainDepartment()) {
+    cards = cards.filter(card => getCardDepartmentName(card) === normalizeDepartmentName(window.currentDepartment));
   }
 
   if (searchVal) {
     cards = cards.filter(card => {
       const deptSelect = card.querySelector('.dept-select');
       const deptName = deptSelect && deptSelect.selectedIndex >= 0
-        ? deptSelect.options[deptSelect.selectedIndex].text.trim()
+        ? normalizeDepartmentName(deptSelect.options[deptSelect.selectedIndex].text)
         : '';
 
       const fields = Array.from(card.querySelectorAll('.underline-input'));
@@ -1317,7 +1382,7 @@ function applyFilter() {
   }
 
   if (cards.length === 0) {
-    renderEmptyDepartmentState(filterVal);
+    renderEmptyDepartmentState(isMainDepartment() ? filterVal : window.currentDepartment);
     return;
   }
 
@@ -1340,7 +1405,9 @@ function openAddCardsForCurrentDepartment() {
 
   if (!addDeptSelect) return;
 
-  const currentDepartment = filterEl && filterEl.value && filterEl.value !== 'ALL' ? filterEl.value : addDeptSelect.value;
+  const currentDepartment = isMainDepartment()
+    ? (filterEl && filterEl.value && filterEl.value !== 'ALL' ? filterEl.value : addDeptSelect.value)
+    : window.currentDepartment;
   addDeptSelect.value = currentDepartment;
 
   if (addQty) {

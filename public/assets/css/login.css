@@ -1,0 +1,74 @@
+.department-login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 490;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 42%, #f8f8f8 0, #e7e7e7 45%, #d5d5d5 100%);
+  font-family: 'Poppins', Arial, sans-serif;
+}
+
+.department-login-overlay[hidden] { display: none; }
+
+.department-login-background-logo {
+  position: fixed;
+  z-index: 0;
+  width: min(1400px, 165vw);
+  opacity: 0.15;
+  filter: blur(2px) saturate(0.7) grayscale(0.25) drop-shadow(16px 16px 18px rgba(120, 120, 120, 0.2)) drop-shadow(-12px -12px 18px rgba(255, 255, 255, 0.7));
+  transform: translate(8px, 10px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.department-login-wrapper {
+  position: relative;
+  isolation: isolate;
+  width: min(590px, calc(100vw - 72px));
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 38% 30%, #eeeeee 0, #e3e3e3 64%, #dcdcdc 100%);
+  border-radius: 50%;
+  box-shadow: 24px 24px 48px rgba(132, 132, 132, 0.3), -24px -24px 48px rgba(255, 255, 255, 0.98), inset 3px 3px 7px rgba(255, 255, 255, 0.68), inset -3px -3px 7px rgba(166, 166, 166, 0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 72px 92px;
+  color: #4a4a4a;
+}
+
+.department-login-wrapper::before,
+.department-login-wrapper::after { content: ''; position: absolute; pointer-events: none; border-radius: 50%; }
+.department-login-wrapper::before { inset: 15px; z-index: -1; box-shadow: inset 8px 8px 16px rgba(164, 164, 164, 0.22), inset -8px -8px 16px rgba(255, 255, 255, 0.94), 3px 3px 7px rgba(255, 255, 255, 0.75), -3px -3px 7px rgba(166, 166, 166, 0.12); }
+.department-login-wrapper::after { inset: 23px; z-index: -1; border: 1px solid rgba(255, 255, 255, 0.62); box-shadow: 5px 5px 12px rgba(159, 159, 159, 0.16), -5px -5px 12px rgba(255, 255, 255, 0.64); }
+.department-login-wrapper h1 { margin: 0 0 4px; color: #4a4a4a; font-family: 'Poppins', Arial, sans-serif; font-weight: 700; font-size: clamp(32px, 5vw, 46px); text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.82), -2px -2px 4px rgba(0, 0, 0, 0.1); }
+.department-login-subtitle { margin: 0 0 30px; color: #8a92a5; font-size: 13px; font-weight: 500; }
+.department-login-input-group { position: relative; width: 100%; margin-bottom: 20px; }
+.department-login-input-group i { position: absolute; left: 18px; top: 50%; z-index: 1; transform: translateY(-50%); color: #d65b5b; font-size: 14px; }
+.department-login-input-group input,
+.department-login-input-group select { display: block; box-sizing: border-box; width: 100%; height: 47px; min-height: 47px; border: none; outline: none; padding: 14px 14px 14px 44px; border-radius: 12px; background: #e3e3e3; color: #4a4a4a; font: 500 13px/19px 'Poppins', Arial, sans-serif; box-shadow: inset 4px 4px 8px #c1c1c1, inset -4px -4px 8px #fff, inset 0 0 0 2px rgba(214, 91, 91, 0.15); }
+.department-login-input-group input { display: block; box-sizing: border-box; width: 100%; height: 47px; min-height: 47px; border: none; outline: none; padding: 14px 14px 14px 44px; border-radius: 12px; background: #e3e3e3; color: #4a4a4a; font: 500 13px/19px 'Poppins', Arial, sans-serif; box-shadow: inset 4px 4px 8px #c1c1c1, inset -4px -4px 8px #fff, inset 0 0 0 2px rgba(214, 91, 91, 0.15); }
+.department-login-input-group select { appearance: none; cursor: pointer; }
+.department-login-input-group select:invalid { color: #a0a5b1; }
+.department-login-input-group input::placeholder { color: #a0a5b1; }
+.department-login-options { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 5px; }
+.department-remember-me { display: flex; align-items: center; gap: 10px; cursor: pointer; color: #8a92a5; font-size: 11px; font-weight: 600; user-select: none; }
+.department-remember-me input { display: none; }
+.department-toggle-switch { position: relative; width: 36px; height: 18px; border-radius: 18px; background: #e3e3e3; box-shadow: inset 3px 3px 6px #c1c1c1, inset -3px -3px 6px #fff; }
+.department-toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #e3e3e3; box-shadow: 2px 2px 4px #c1c1c1, -2px -2px 4px #fff; transition: 0.3s ease; }
+.department-remember-me input:checked + .department-toggle-switch::after { left: 20px; background: #d65b5b; box-shadow: none; }
+.department-forgot-password { color: #8a92a5; font-size: 11px; font-weight: 600; text-decoration: none; }
+.department-forgot-password:hover { color: #4a4a4a; }
+.department-login-button { width: 85%; margin-bottom: 12px; padding: 14px; border: none; border-radius: 12px; background: #e3e3e3; color: #4a4a4a; cursor: pointer; font: 700 13px 'Poppins', Arial, sans-serif; letter-spacing: 0.5px; box-shadow: 6px 6px 12px #c1c1c1, -6px -6px 12px #fff; transition: all 0.2s ease; }
+.department-login-button:hover { color: #d65b5b; }
+.department-login-button:active { box-shadow: inset 4px 4px 8px #c1c1c1, inset -4px -4px 8px #fff; }
+.department-login-error { min-height: 16px; margin: 0 0 5px; color: #9a0603; font-size: 11px; font-weight: 600; text-align: center; }
+.department-signup-text { margin: 0; color: #8a92a5; font-size: 11px; font-weight: 500; text-align: center; }
+
+@media (max-width: 600px) {
+  .department-login-wrapper { width: calc(100vw - 44px); padding: 52px 54px; }
+  .department-login-wrapper::before { inset: 11px; }
+  .department-login-wrapper::after { inset: 17px; }
+}

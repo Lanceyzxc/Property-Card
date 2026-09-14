@@ -6,6 +6,7 @@ This guide is for office staff and anyone who uses the application to create, re
 
 | Task | Where to go |
 |---|---|
+| Sign in | Login page; select your department and enter the administrator-provided password |
 | Upload an Excel list | Property Cards page |
 | Create a blank property card | Property Cards page, **Add New Cards** |
 | Find a saved record | Property Cards search or department filter |
@@ -22,6 +23,8 @@ Prepare the following:
 - Internet access.
 - An approved Excel or CSV file when importing records.
 - The correct department and property information for review.
+
+You must sign in with your department before using the Property Cards or Inventory Tags pages. The `MAIN` department can work across all departments. Other departments are automatically limited to their own records.
 
 Do not upload a spreadsheet until it has been checked. Imported records can become live saved records in the system.
 
@@ -40,9 +43,20 @@ Saved records are shared between the Property Cards and Inventory Tags pages.
 
 ## Opening The Application
 
-Open the published application in a browser. The first page is the **Property Cards** page.
+Open the published application in a browser. The first page is the **Login** page.
+
+To sign in:
+
+1. Select your department.
+2. Enter the password provided by the system administrator.
+3. Optionally enable **Remember me**.
+4. Click **SIGN IN**.
+
+When **Remember me** is enabled, the selected department is prefilled on a later visit. Without it, access is kept only for the current browser session. Use **Forgot password?** to contact the system administrator; password recovery is managed outside the application.
 
 The application needs an internet connection because it uses online storage and browser libraries.
+
+After sign-in, a short loading screen appears while the workspace and saved records are prepared.
 
 ## Loading Cards From Excel
 
@@ -126,13 +140,15 @@ Save behavior:
 
 Use the left-side controls to:
 
-- Filter cards by department.
+- Filter cards by department when signed in as `MAIN`.
 - Search for card information.
 - Reset the filter and search.
 - Move between pages of cards.
 - Change field text between enhanced and plain colors.
 
 The dashboard shows the total number of cards and the number currently visible.
+
+For a department other than `MAIN`, the department filter is hidden and all displayed cards are automatically limited to the signed-in department. Imported rows from other departments are skipped.
 
 ### Add blank cards
 
@@ -167,7 +183,7 @@ The property card print layout is designed to place up to ten cards on a print p
 
 1. Open **Inventory Tags** from the Property Cards page.
 2. Search by property number, article, serial number, department, or location.
-3. Choose a department if needed.
+3. If signed in as `MAIN`, choose a department if needed. Other departments are automatically limited to their own tags.
 4. Edit text directly on a tag.
 5. Click outside an edited field so the change can be saved.
 6. Print all visible tags or select specific tags and print them.

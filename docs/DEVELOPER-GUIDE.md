@@ -14,15 +14,19 @@ propertyTags/{cardId}
 
 The Property Cards and Inventory Tags pages use this same collection.
 
+Access is selected through `login.html`. The current implementation stores the normalized department in `sessionStorage`; **Remember me** additionally stores the department and preference in `localStorage`. This is a client-side access gate and is not a substitute for Firebase Authentication or Firestore security rules.
+
 ## Architecture At A Glance
 
 ```mermaid
 flowchart LR
     A[Browser] --> B[public/index.html]
     A --> C[public/inventory.html]
+    A --> I[public/login.html]
     B --> D[main.js]
     B --> E[print.js]
     C --> F[inventory.js]
+    I --> J[login.js]
     D --> G[(Firebase Firestore)]
     F --> G
     D --> H[par.html or ics.html]
@@ -48,12 +52,15 @@ Property Card/
     ├── par.html                 Property Acknowledgment Receipt template
     ├── ics.html                 Inventory Custodian Slip template
     ├── 404.html                 Firebase Hosting not-found page
+    ├── login.html                 Department login page
     └── assets/
         ├── css/
+        │   ├── login.css          Department login styles
         │   ├── styles.css       Property Cards styles
         │   └── inventory.css    Inventory Tags styles
         ├── images/               Logos and image assets
         └── js/
+            ├── login.js          Department login and remembered access
             ├── main.js          Card state, import, editing, filtering, and saving
             ├── inventory.js     Inventory rendering, editing, numbering, and printing
             └── print.js         Property card print layout
@@ -84,6 +91,7 @@ Open the URL printed in the terminal. The server serves files from `public/` and
 
 ```text
 /                  Property Cards page
+/login.html         Department login page
 /index.html        Property Cards page
 /inventory.html    Inventory Tags page
 /par.html?id=ID    Property Acknowledgment Receipt for a record
@@ -97,7 +105,8 @@ When testing in a browser, inspect:
 1. The Console for JavaScript and Firebase errors.
 2. The Network panel for failed CDN or Firestore requests.
 3. The Application/Storage panel for the `fieldColorMode` preference.
-4. Print Preview for card dimensions, page breaks, and QR visibility.
+4. The Application/Storage panel for `propertyCardDepartment` and `propertyCardRememberLogin` when testing remembered access.
+5. Print Preview for card dimensions, page breaks, and QR visibility.
 
 ### Check JavaScript syntax
 
@@ -114,6 +123,7 @@ node --check "public/assets/js/print.js"
 Owns the Property Cards page, including:
 
 - Department definitions and card colors.
+- Department-scoped access and the `MAIN` cross-department view.
 - Loading records from Firestore.
 - Creating blank cards.
 - Importing Excel or CSV data.
@@ -123,6 +133,8 @@ Owns the Property Cards page, including:
 - QR code generation.
 - Links to PAR and ICS forms.
 
+When the signed-in department is not `MAIN`, the department filter and per-card department selector are hidden. New cards and imported rows are assigned to the signed-in department, and records from other departments are excluded from the visible set.
+
 Excel import starts at row 5 of the first worksheet. It imports rows whose `Inventory/Property Classification` contains `semi` or `non`, which is why Expendable records are skipped.
 
 ### `inventory.js`
@@ -131,6 +143,7 @@ Owns the Inventory Tags page, including:
 
 - Loading `propertyTags` records.
 - Search and department filtering.
+- Department-scoped visibility, with cross-department filtering available to `MAIN` only.
 - Inline contenteditable fields.
 - Automatic inventory number assignment.
 - Live Firestore updates.
@@ -152,6 +165,10 @@ These are printable document templates. The form selected for a QR link is based
 - Values containing `SPLV` or `SPHV` use `ics.html`.
 - Other values use `par.html`.
 
+### `login.js`
+
+Handles department selection, password validation, the **Remember me** preference, and redirecting a successful login to `index.html`. Department names are normalized so legacy `GASS` values map to `MAIN`.
+
 ## Runtime Data Flow
 
 ### Property Cards
@@ -163,14 +180,17 @@ These are printable document templates. The form selected for a QR link is based
 5. The saved record receives a QR URL based on its property number.
 6. Print operations build a temporary print-only DOM structure.
 
+Before this flow begins, `main.js` redirects visitors without a valid department session to `login.html`. The initial splash screen is held briefly while the page initializes.
+
 ### Inventory Tags
 
-1. `inventory.js` reads the same Firestore collection.
-2. Missing inventory numbers are assigned and written back in batches.
-3. Search and department filters operate on the loaded records.
-4. Inline edits are written when the field loses focus.
-5. QR codes are rendered lazily as tags become visible.
-6. Printing builds a temporary inventory print sheet.
+1. `inventory.js` redirects visitors without a valid department session to `login.html`.
+2. `inventory.js` reads the same Firestore collection.
+3. Missing inventory numbers are assigned and written back in batches.
+4. Search and department filters operate on the loaded records.
+5. Inline edits are written when the field loses focus.
+6. QR codes are rendered lazily as tags become visible.
+7. Printing builds a temporary inventory print sheet.
 
 ## Excel Import Mapping
 
@@ -233,6 +253,8 @@ savedAt
 | Inventory signatures | `coaRepresentative`, `propertyCustodian` |
 
 There is no schema migration framework in this repository. New optional fields should be introduced defensively so older documents without the field continue to render correctly.
+
+Department access is currently enforced by browser code only. Treat Firestore rules as the actual security boundary and do not rely on hidden controls or client-side filtering to protect data.
 
 When adding a field, update every relevant boundary:
 

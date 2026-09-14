@@ -38,7 +38,7 @@ function printCards(cardsToPrint) {
       ['Date Acquired:', data.dateAcquired, true],
       ['Acquisition Cost:', data.acquisitionCost, true],
       ['Fund:', data.fund, false],
-      ['End-User/Location:', data.endUserLocation, false],
+      ['Location:', data.endUserLocation, false],
       ['Requested by:', data.requestedBy, false],
       ['Supplier:', data.supplier, false],
       ['P.O/J.O/Contract Ref:', data.reference, false],

@@ -287,6 +287,8 @@ body {
   box-shadow: 8px 8px 16px var(--neumorphic-dark), -8px -8px 16px var(--neumorphic-light);
 }
 
+.control-group[hidden] { display: none; }
+
 .control-group label {
   font-size: 14px;
   font-weight: bold;

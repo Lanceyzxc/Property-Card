@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | UCN ProCard System</title>
+  <link rel="stylesheet" href="assets/css/login.css?v=20260909.1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/images/ucn.png" type="image/x-icon">
+</head>
+<body>
+  <section class="department-login-overlay" id="department-login" aria-labelledby="department-login-title">
+    <img class="department-login-background-logo" src="assets/images/ucn.png" alt="" aria-hidden="true">
+    <form class="department-login-wrapper" id="department-login-form">
+      <h1 id="department-login-title">Login</h1>
+      <p class="department-login-subtitle">Select your department to continue</p>
+
+      <div class="department-login-input-group department-select-group">
+        <i class="fa-solid fa-building" aria-hidden="true"></i>
+        <select id="login-department" required aria-label="Department">
+          <option value="" disabled selected>Select Department</option>
+          <option value="MAIN">MAIN</option>
+          <option value="COTT">COTT</option>
+          <option value="CFAST">CFAST</option>
+          <option value="CCMS">CCMS</option>
+          <option value="COED">COED</option>
+          <option value="IABD">IABD</option>
+          <option value="CBPA">CBPA</option>
+          <option value="CANR">CANR</option>
+          <option value="COENG">COENG</option>
+          <option value="CAS">CAS</option>
+        </select>
+      </div>
+
+      <div class="department-login-input-group department-password-group">
+        <i class="fa-solid fa-lock" aria-hidden="true"></i>
+        <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" required>
+      </div>
+
+      <div class="department-login-options">
+        <label class="department-remember-me">
+          <input id="login-remember" type="checkbox">
+          <span class="department-toggle-switch"></span>
+          Remember me
+        </label>
+        <a href="#" class="department-forgot-password" id="forgot-password">Forgot password?</a>
+      </div>
+
+      <button class="department-login-button" type="submit">SIGN IN</button>
+      <p class="department-login-error" id="department-login-error" role="alert" aria-live="polite"></p>
+      <p class="department-signup-text">Department access is managed by the system administrator.</p>
+    </form>
+  </section>
+
+  <script src="assets/js/login.js?v=20260909.2"></script>
+</body>
+</html>

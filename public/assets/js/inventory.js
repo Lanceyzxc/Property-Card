@@ -13,6 +13,31 @@ let qrRenderGeneration = 0;
 let inventoryQrObserver = null;
 let inventoryRenderGeneration = 0;
 const DEFAULT_PROPERTY_CUSTODIAN = 'Arsenio Gem A. Garcillanosa';
+const PROPERTY_CUSTODIANS = {
+  MAIN: 'Arsenio Gem A. Garcillanosa',
+  CBPA: 'Arsenio Gem A. Garcillanosa',
+  CAS: 'Arsenio Gem A. Garcillanosa',
+  COTT: 'Irene P. Andres',
+  COENG: 'Odello Dela Cruz',
+  COED: 'Jeannete C. Abaquita',
+  CANR: 'Bernadette Sta. Catalina,R.Agr.,LPT',
+  CFAST: 'Edgardo V. Teope',
+  IABD: 'Mar Joy T. Abo',
+  CCMS: 'Zyra D. Chang, LPT'
+};
+
+function normalizeDepartmentName(value) {
+  const department = text(value).trim().toUpperCase();
+  return department === 'GASS' ? 'MAIN' : department;
+}
+
+function getInventoryDepartment() {
+  return normalizeDepartmentName(sessionStorage.getItem('propertyCardDepartment') || localStorage.getItem('propertyCardDepartment'));
+}
+
+function isMainInventoryDepartment() {
+  return getInventoryDepartment() === 'MAIN';
+}
 
 function text(value) {
   return value === undefined || value === null ? '' : String(value);
@@ -33,6 +58,12 @@ function escapeHtml(value) {
 
 function getPersonAccountable(record) {
   return record.requestedBy || record.personAccountable || '';
+}
+
+function getPropertyCustodian(record) {
+  const department = normalizeDepartmentName(record?.dept);
+  const matchedDepartment = Object.keys(PROPERTY_CUSTODIANS).find(name => department === name || department.includes(name));
+  return matchedDepartment ? PROPERTY_CUSTODIANS[matchedDepartment] : (record.propertyCustodian || DEFAULT_PROPERTY_CUSTODIAN);
 }
 
 async function ensureInventoryTags(records, firestore) {
@@ -130,10 +161,14 @@ async function renderTags() {
   const grid = document.getElementById('inventory-grid');
   const query = document.getElementById('inventory-search').value.trim().toLowerCase();
   const department = document.getElementById('inventory-department').value;
+  const currentDepartment = getInventoryDepartment();
   const records = inventoryRecords.filter(record => {
     const haystack = [record.itemDescription, record.propertyNo, record.serialNo, record.dept, record.endUserLocation]
       .map(text).join(' ').toLowerCase();
-    return (!query || haystack.includes(query)) && (department === 'ALL' || record.dept === department);
+    const matchesDepartment = isMainInventoryDepartment()
+      ? (department === 'ALL' || record.dept === department)
+      : record.dept === currentDepartment;
+    return (!query || haystack.includes(query)) && matchesDepartment;
   });
 
   grid.classList.remove('is-loading');
@@ -181,7 +216,7 @@ async function renderTags() {
         </div>
         <div class="tag-signatures">
           ${field('Inventory Committee', record.coaRepresentative, 'coaRepresentative')}
-          ${field('Property Custodian', record.propertyCustodian || DEFAULT_PROPERTY_CUSTODIAN, 'propertyCustodian')}
+          ${field('Property Custodian', getPropertyCustodian(record), 'propertyCustodian')}
         </div>
       </div>
     </article>
@@ -236,7 +271,7 @@ function buildInventoryPrintPage(records) {
         <div class="inventory-print-main-title">GOVERNMENT PROPERTY</div>
         <div class="inventory-print-university">University of Camarines Norte</div>
         <div class="inventory-print-office-block">
-          <div class="inventory-print-office-val">${escapeHtml(record.dept || 'GASS')}</div>
+          <div class="inventory-print-office-val">${escapeHtml(record.dept || 'MAIN')}</div>
           <div class="inventory-print-office-line"></div>
           <div class="inventory-print-office-label">Office/Location</div>
         </div>
@@ -304,7 +339,7 @@ function buildInventoryPrintPage(records) {
           <div class="inventory-print-sig-label">Inventory Committee</div>
         </div>
         <div class="inventory-print-sig-block">
-          <div class="inventory-print-sig-val">${escapeHtml(record.propertyCustodian || DEFAULT_PROPERTY_CUSTODIAN)}</div>
+          <div class="inventory-print-sig-val">${escapeHtml(getPropertyCustodian(record))}</div>
           <div class="inventory-print-sig-line"></div>
           <div class="inventory-print-sig-label">Property Custodian</div>
         </div>
@@ -440,6 +475,7 @@ function fitSignatureNames(scope = document) {
 
 function populateDepartments() {
   const select = document.getElementById('inventory-department');
+  if (!isMainInventoryDepartment()) return;
   [...new Set(inventoryRecords.map(record => record.dept).filter(Boolean))].sort().forEach(dept => {
     const option = document.createElement('option');
     option.value = dept;
@@ -449,12 +485,25 @@ function populateDepartments() {
 }
 
 async function startInventory() {
+  const currentDepartment = getInventoryDepartment();
+  if (!currentDepartment) {
+    window.location.replace('login.html');
+    return;
+  }
+
+  const departmentFilterGroup = document.getElementById('inventory-department')?.closest('.control-group');
+  if (departmentFilterGroup) departmentFilterGroup.hidden = !isMainInventoryDepartment();
+
   firebase.initializeApp(firebaseConfig);
   const firestore = firebase.firestore();
   const grid = document.getElementById('inventory-grid');
 
   const renderSnapshot = async (snapshot) => {
-    inventoryRecords = snapshot.docs.map(doc => ({ cardId: doc.id, ...doc.data() }));
+    inventoryRecords = snapshot.docs.map(doc => ({
+      cardId: doc.id,
+      ...doc.data(),
+      dept: normalizeDepartmentName(doc.data().dept)
+    }));
     const select = document.getElementById('inventory-department');
     select.innerHTML = '<option value="ALL">All Departments</option>';
     populateDepartments();

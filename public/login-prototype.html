@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in | UCN ProCard</title>
+  <meta name="description" content="Sign in to the UCN ProCard property management workspace.">
+  <link rel="stylesheet" href="assets/css/login-prototype.css?v=20260910.1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/images/ucn.png" type="image/x-icon">
+</head>
+<body>
+  <main class="prototype-shell">
+    <section class="brand-panel" aria-label="UCN ProCard introduction">
+      <div class="brand-topline">
+        <div class="brand-mark"><img src="assets/images/ucn.png" alt="UCN logo"></div>
+        <span>UCN ProCard</span>
+      </div>
+
+      <div class="brand-copy">
+        <p class="eyebrow">Supply &amp; Property Management Office</p>
+        <h1>Every property,<br><em>properly recorded.</em></h1>
+      </div>
+    </section>
+
+    <section class="login-panel">
+      <div class="login-content">
+        <div class="mobile-brand-mark"><img src="assets/images/ucn.png" alt="UCN logo"></div>
+        <p class="form-kicker">Welcome back</p>
+        <h2>Sign in to your workspace</h2>
+
+        <form id="department-login-form" novalidate>
+          <div class="field-group">
+            <label for="login-department">Department</label>
+            <div class="field-control">
+              <i class="fa-solid fa-building" aria-hidden="true"></i>
+              <select id="login-department" required>
+                <option value="" disabled selected>Select your department</option>
+                <option value="MAIN">MAIN</option>
+                <option value="COTT">COTT</option>
+                <option value="CFAST">CFAST</option>
+                <option value="CCMS">CCMS</option>
+                <option value="COED">COED</option>
+                <option value="IABD">IABD</option>
+                <option value="CBPA">CBPA</option>
+                <option value="CANR">CANR</option>
+                <option value="COENG">COENG</option>
+                <option value="CAS">CAS</option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-chevron" aria-hidden="true"></i>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="login-password">Password</label>
+            <div class="field-control">
+              <i class="fa-solid fa-lock" aria-hidden="true"></i>
+              <input id="login-password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
+            </div>
+          </div>
+
+          <div class="form-options">
+            <label class="remember-option">
+              <input id="login-remember" type="checkbox">
+              <span class="custom-checkbox" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+              Remember this department
+            </label>
+          </div>
+
+          <button class="submit-button" type="submit"><span>Continue to workspace</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+          <p class="login-error" id="department-login-error" role="alert" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+  <script src="assets/js/login.js?v=20260910.1"></script>
+</body>
+</html>

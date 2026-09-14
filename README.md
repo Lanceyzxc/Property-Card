@@ -2,7 +2,7 @@
 
 > A browser-based property card and inventory tag management system for the Supply and Property Management Office.
 
-The UCN ProCard System helps staff create, update, search, save, and print government property records. It supports Excel imports, department filtering, QR-linked forms, property tags, and inventory tags.
+The UCN ProCard System helps staff create, update, search, save, and print government property records. It supports department login, department-scoped records, Excel imports, department filtering, QR-linked forms, property tags, and inventory tags.
 
 Records are shared between the Property Cards and Inventory Tags pages through Firebase Firestore.
 
@@ -19,11 +19,12 @@ Choose the guide for your role:
 
 ### Property Cards
 
+- Sign in by department before opening property records.
 - Import records from `.xlsx`, `.xls`, or `.csv` files.
 - Add blank cards manually.
 - Edit property information directly in the browser.
 - Automatically save changes to Firestore.
-- Search and filter records by department.
+- Search and filter records by department; `MAIN` can view all departments, while other departments see only their own records.
 - Select, print, or delete cards in batches.
 - Generate QR codes for saved property records.
 
@@ -31,9 +32,16 @@ Choose the guide for your role:
 
 - View saved property records as inventory tags.
 - Search by property number, article, serial number, department, or location.
+- Department users see only their own inventory tags; `MAIN` can filter across all departments.
 - Edit tag information directly on the tag.
 - Automatically assign missing inventory numbers.
 - Print all visible tags or selected tags.
+
+### Department Access And Loading
+
+- The login page requires a department and its administrator-managed password.
+- **Remember me** restores the selected department on the next visit; otherwise access lasts for the current browser session.
+- The application displays a loading splash screen while the workspace and records are prepared.
 
 ### Forms And QR Codes
 
@@ -124,21 +132,24 @@ Property Card/
 ├── docs/
 │   ├── USER-GUIDE.md            Non-technical user instructions
 │   └── DEVELOPER-GUIDE.md       Technical maintenance guide
-	└── public/
-		├── index.html               Property Cards page
-		├── inventory.html           Inventory Tags page
-		├── par.html                 Property Acknowledgment Receipt template
-		├── ics.html                 Inventory Custodian Slip template
-		├── 404.html                 Firebase Hosting not-found page
-		└── assets/
-			├── css/
-			│   ├── styles.css       Property Cards styles
-			│   └── inventory.css    Inventory Tags styles
-			├── images/               Logos and image assets
-			└── js/
-				├── main.js          Cards, import, filtering, saving, and QR links
-				├── inventory.js     Inventory tags, numbering, editing, and printing
-				└── print.js          Property card print layout
+└── public/
+	├── login.html              Department login page
+	├── index.html              Property Cards page
+	├── inventory.html          Inventory Tags page
+	├── par.html                Property Acknowledgment Receipt template
+	├── ics.html                Inventory Custodian Slip template
+	├── 404.html                Firebase Hosting not-found page
+	└── assets/
+		├── css/
+		│   ├── login.css       Department login styles
+		│   ├── styles.css      Property Cards styles and splash screen
+		│   └── inventory.css   Inventory Tags styles
+		├── images/              Logos and image assets
+		└── js/
+			├── login.js        Department login and remembered access
+			├── main.js         Cards, access scoping, import, filtering, saving, and QR links
+			├── inventory.js    Inventory tags, access scoping, numbering, editing, and printing
+			└── print.js         Property card print layout
 ```
 
 ## Technical Summary
@@ -148,6 +159,7 @@ Property Card/
 | Front end | Static HTML, CSS, and browser JavaScript |
 | Local server | Node.js built-in HTTP server |
 | Data storage | Firebase Firestore collection `propertyTags` |
+| Access control | Department login with session/local browser storage |
 | Spreadsheet import | SheetJS loaded from a CDN |
 | QR generation | QRCode.js loaded from a CDN |
 | Hosting | Firebase Hosting configuration is included |
@@ -156,11 +168,13 @@ Property Card/
 ## Data And Safety Notes
 
 - Firestore is the source of truth for saved property cards and inventory tags.
+- Department visibility is scoped in the browser: `MAIN` can view all departments, while other departments see only their own records.
 - Property card edits save automatically after a short delay.
 - Inventory tag edits save when the edited field loses focus.
 - The repository does not provide a backup or export workflow.
 - Confirm print previews before large print runs.
 - Protect the Firebase project with appropriate Firestore security rules and account access controls.
+- The current login flow is a client-side gate, not server-side authentication. Do not treat it as a security boundary until Firebase Authentication and server-enforced Firestore rules are configured.
 
 ## Deployment
 
