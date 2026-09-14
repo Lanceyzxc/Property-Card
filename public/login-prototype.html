@@ -3,42 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign in | UCN ProCard</title>
-  <meta name="description" content="Sign in to the UCN ProCard property management workspace.">
-  <link rel="stylesheet" href="assets/css/login-prototype.css?v=20260910.1">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#a71916">
+  <title>Access Tag | UCN ProCard System</title>
+  <link rel="stylesheet" href="assets/css/login-prototype.css?v=20260914.4">
   <link rel="icon" href="assets/images/ucn.png" type="image/x-icon">
 </head>
 <body>
-  <main class="prototype-shell">
-    <section class="brand-panel" aria-label="UCN ProCard introduction">
-      <div class="brand-topline">
-        <div class="brand-mark"><img src="assets/images/ucn.png" alt="UCN logo"></div>
-        <span>UCN ProCard</span>
+  <main class="tag-login-shell">
+    <div class="paper-grain" aria-hidden="true"></div>
+
+    <header class="prototype-header">
+      <a class="brand-lockup" href="login.html" aria-label="Return to standard login">
+        <img src="assets/images/logo.png" alt="University of Northern Philippines logo">
+        <span>
+          <strong>UCN ProCard</strong>
+        </span>
+      </a>
+    </header>
+
+    <section class="login-stage" aria-labelledby="prototype-title">
+      <div class="intro-copy">
+        <div class="intro-heading-row">
+          <div class="intro-logo-frame">
+            <img src="assets/images/ucn.png" alt="University of Northern Philippines seal">
+          </div>
+          <h1 id="prototype-title">Sign in to your<br><em>property desk.</em></h1>
+        </div>
       </div>
 
-      <div class="brand-copy">
-        <p class="eyebrow">Supply &amp; Property Management Office</p>
-        <h1>Every property,<br><em>properly recorded.</em></h1>
-      </div>
-    </section>
+      <form class="property-tag" id="department-login-form"> 
+        <div class="tag-notch" aria-hidden="true"><span></span></div>
+        <div class="tag-edge" aria-hidden="true"></div>
+        <div class="tag-grid" aria-hidden="true"></div>
 
-    <section class="login-panel">
-      <div class="login-content">
-        <div class="mobile-brand-mark"><img src="assets/images/ucn.png" alt="UCN logo"></div>
-        <p class="form-kicker">Welcome back</p>
-        <h2>Sign in to your workspace</h2>
+        <div class="tag-topline">
+          <span class="tag-category">PROPERTY ACCESS TAG</span>
+        </div>
 
-        <form id="department-login-form" novalidate>
-          <div class="field-group">
-            <label for="login-department">Department</label>
-            <div class="field-control">
-              <i class="fa-solid fa-building" aria-hidden="true"></i>
-              <select id="login-department" required>
-                <option value="" disabled selected>Select your department</option>
+        <div class="tag-brand-row">
+          <img src="assets/images/logo.png" alt="">
+          <div>
+            <strong>UNIVERSITY OF CAMARINES<br>NORTE</strong>
+          </div>
+        </div>
+
+        <div class="tag-rule card-rule"></div>
+
+        <div class="tag-title-block">
+          <span class="tag-field-label">AUTHORIZED UNIT</span>
+          <strong id="tag-department">SELECT DEPARTMENT</strong>
+        </div>
+
+        <div class="tag-form-fields">
+          <label class="tag-field">
+            <span class="tag-field-label">DEPARTMENT</span>
+            <span class="field-control">
+              <span class="field-mark">01</span>
+              <select id="login-department" required aria-label="Department">
+                <option value="" disabled selected>Select department</option>
                 <option value="MAIN">MAIN</option>
                 <option value="COTT">COTT</option>
                 <option value="CFAST">CFAST</option>
@@ -50,32 +72,42 @@
                 <option value="COENG">COENG</option>
                 <option value="CAS">CAS</option>
               </select>
-              <i class="fa-solid fa-chevron-down select-chevron" aria-hidden="true"></i>
-            </div>
-          </div>
+              <span class="select-arrow" aria-hidden="true">+</span>
+            </span>
+          </label>
 
-          <div class="field-group">
-            <label for="login-password">Password</label>
-            <div class="field-control">
-              <i class="fa-solid fa-lock" aria-hidden="true"></i>
-              <input id="login-password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
-            </div>
-          </div>
+          <label class="tag-field">
+            <span class="tag-field-label">ACCESS KEY</span>
+            <span class="field-control">
+              <span class="field-mark">02</span>
+              <input id="login-password" type="password" placeholder="Enter department password" autocomplete="current-password" required>
+              <button class="reveal-key" type="button" id="reveal-password" aria-label="Show password">SHOW</button>
+            </span>
+          </label>
+        </div>
 
-          <div class="form-options">
-            <label class="remember-option">
-              <input id="login-remember" type="checkbox">
-              <span class="custom-checkbox" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
-              Remember this department
-            </label>
-          </div>
+        <div class="tag-actions">
+          <label class="remember-choice">
+            <input id="login-remember" type="checkbox">
+            <span class="check-box" aria-hidden="true"></span>
+            Keep this department selected
+          </label>
+        </div>
 
-          <button class="submit-button" type="submit"><span>Continue to workspace</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
-          <p class="login-error" id="department-login-error" role="alert" aria-live="polite"></p>
-        </form>
-      </div>
+        <button class="issue-button" type="submit">
+          <span>VERIFY &amp; OPEN DESK</span>
+          <span class="button-arrow" aria-hidden="true">-&gt;</span>
+        </button>
+        <p class="tag-error" id="department-login-error" role="alert" aria-live="polite"></p>
+
+        <div class="tag-footer card-footer">
+          <span class="footer-barcode" aria-hidden="true">|| | |||| || | |||</span>
+          <span>UCN-SPMO</span>
+        </div>
+      </form>
     </section>
   </main>
-  <script src="assets/js/login.js?v=20260910.1"></script>
+
+  <script src="assets/js/login-prototype.js?v=20260914.1"></script>
 </body>
 </html>
