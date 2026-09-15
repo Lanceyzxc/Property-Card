@@ -24,6 +24,8 @@ let uniqueCardId = 0;
 let allCards = [];
 let knownCardCount = 0;
 let cardsStillRendering = false;
+let pendingCardData = [];
+let loadedCardData = [];
 let firebaseFirestore = null;
 let firebaseInitialized = false;
 let deferCardQrRendering = false;
@@ -71,7 +73,16 @@ function finishMainLoading() {
   if (!container) return;
   container.querySelectorAll('.main-loading-card').forEach((loadingCard) => loadingCard.remove());
   container.classList.remove('is-loading');
-  container.setAttribute('aria-busy', 'false');
+}
+
+function updateMainRenderStatus(message = '', visible = true) {
+  const status = document.getElementById('main-load-status');
+  const container = document.getElementById('pages-container');
+  if (!status || !container) return;
+  status.textContent = message;
+  status.hidden = !visible;
+  container.classList.toggle('is-rendering', visible);
+  container.setAttribute('aria-busy', visible ? 'true' : 'false');
 }
 
 function finishAppSplash() {
@@ -836,6 +847,7 @@ function closeFieldThemePanel() {
 async function loadCardsFromFirestore() {
   if (!firebaseInitialized || !firebaseFirestore) return false;
   updateFirebaseStatus("Loading saved cards...", "#004aad");
+  updateMainRenderStatus('Loading cards...');
 
   try {
     let cardsQuery = firebaseFirestore.collection('propertyTags');
@@ -848,6 +860,7 @@ async function loadCardsFromFirestore() {
     ]);
     if (snapshot.empty) {
       finishMainLoading();
+      updateMainRenderStatus('', false);
       updateFirebaseStatus("No saved cards found. Starting fresh.", "#004aad");
       return false;
     }
@@ -857,6 +870,8 @@ async function loadCardsFromFirestore() {
     uniqueCardId = 0;
     allCards = [];
     knownCardCount = snapshot.size;
+    loadedCardData = snapshot.docs.map(doc => ({ cardId: doc.id, ...doc.data() }));
+    pendingCardData = [...loadedCardData];
     deferCardQrRendering = true;
 
     const savedCards = snapshot.docs;
@@ -875,19 +890,27 @@ async function loadCardsFromFirestore() {
 
     deferCardQrRendering = false;
     finishMainLoading();
+    updateMainRenderStatus(
+      savedCards.length > initialBatchSize
+        ? `Loading cards... ${Math.min(initialBatchSize, savedCards.length)} of ${savedCards.length}`
+        : '',
+      savedCards.length > initialBatchSize
+    );
     renderLoadedCardQRCodes();
 
     (async () => {
       for (let start = initialBatchSize; start < savedCards.length; start += 20) {
         savedCards.slice(start, start + 20).forEach(renderSavedCard);
-        if (hasActiveCardFilter()) applyFilter();
+        updateMainRenderStatus(`Loading cards... ${Math.min(start + 20, savedCards.length)} of ${savedCards.length}`);
         await yieldToBrowser();
       }
       cardsStillRendering = false;
       knownCardCount = allCards.length;
-      if (hasActiveCardFilter()) applyFilter();
+      pendingCardData = [];
+      applyFilter();
       renderLoadedCardQRCodes();
       refreshDashboardSummary();
+      updateMainRenderStatus('', false);
     })().catch(error => console.error('Deferred card rendering error', error));
 
     updateFirebaseStatus(`Loaded ${snapshot.size} saved cards.`, "#499632");
@@ -895,7 +918,10 @@ async function loadCardsFromFirestore() {
   } catch (err) {
     deferCardQrRendering = false;
     cardsStillRendering = false;
+    pendingCardData = [];
+    loadedCardData = [];
     finishMainLoading();
+    updateMainRenderStatus('', false);
     console.error('Firestore load error', err);
     updateFirebaseStatus("Unable to load saved cards", "#9a0603");
     return false;
@@ -944,6 +970,7 @@ window.onload = async function() {
     filterSelect.value = 'ALL';
     searchInput.value = '';
     applyFilter();
+    refreshDashboardSummary();
   });
   filterSelect.addEventListener('change', () => { applyFilter(); refreshDashboardSummary(); });
   searchInput.addEventListener('input', () => { applyFilter(); refreshDashboardSummary(); });
@@ -1020,26 +1047,56 @@ function refreshDashboardSummary() {
   const searchEl = document.getElementById('search-query');
   const filterValue = filterEl ? filterEl.value : 'ALL';
   const searchValue = searchEl ? searchEl.value.trim().toLowerCase() : '';
-  const scopedCards = allCards.filter(card => {
-    const department = getCardDepartmentName(card);
+  const sourceCards = cardsStillRendering && pendingCardData.length ? pendingCardData : allCards;
+  const departmentCards = sourceCards.filter(card => {
+    const department = typeof card === 'HTMLElement' ? getCardDepartmentName(card) : getCardDataDepartmentName(card);
     const matchesDepartment = isMainDepartment()
       ? (filterValue === 'ALL' || department === normalizeDepartmentName(filterValue))
       : department === normalizeDepartmentName(window.currentDepartment);
-    if (!matchesDepartment) return false;
-    if (!searchValue) return true;
+    return matchesDepartment;
+  });
 
-    const fields = Array.from(card.querySelectorAll('.underline-input'));
-    const searchableText = `${department} ${fields.map(field => field.value || '').join(' ')}`.toLowerCase();
+  const scopedCards = departmentCards.filter(card => {
+    if (!searchValue) return true;
+    const department = typeof card === 'HTMLElement' ? getCardDepartmentName(card) : getCardDataDepartmentName(card);
+
+    const searchableText = typeof card === 'HTMLElement'
+      ? `${department} ${Array.from(card.querySelectorAll('.underline-input')).map(field => field.value || '').join(' ')}`.toLowerCase()
+      : `${department} ${[
+        card.icsParNo, card.propertyNo, card.serialNo, card.dateAcquired,
+        card.acquisitionCost, card.fund, card.endUserLocation, card.requestedBy,
+        card.supplier, card.reference, card.itemDescription
+      ].join(' ')}`.toLowerCase();
     return searchableText.includes(searchValue);
   });
 
-  const totalCards = isMainDepartment()
-    ? (cardsStillRendering ? knownCardCount : allCards.length)
-    : scopedCards.length;
-  const visibleCards = scopedCards.length;
+  const totalSourceCards = isMainDepartment() && loadedCardData.length ? loadedCardData : sourceCards;
+  const totalCards = isMainDepartment() ? totalSourceCards.length : sourceCards.length;
+  const visibleCards = cardsStillRendering
+    ? scopedCards.length
+    : [...document.querySelectorAll('#pages-container .card-ui-wrapper')].filter(card => {
+        const department = getCardDepartmentName(card);
+        const matchesDepartment = isMainDepartment()
+          ? (filterValue === 'ALL' || department === normalizeDepartmentName(filterValue))
+          : department === normalizeDepartmentName(window.currentDepartment);
+        if (!matchesDepartment || !searchValue) return matchesDepartment;
+        const searchableText = `${department} ${Array.from(card.querySelectorAll('.underline-input'))
+          .map(field => field.value || '').join(' ')}`.toLowerCase();
+        return searchableText.includes(searchValue);
+      }).length;
 
   document.getElementById('summary-total-cards').innerText = totalCards;
   document.getElementById('summary-visible-cards').innerText = visibleCards;
+}
+
+function getCardDataDepartmentName(cardData) {
+  const explicitDepartment = cardData?.dept || cardData?.department || cardData?.office;
+  if (explicitDepartment) return normalizeDepartmentName(explicitDepartment);
+
+  const color = String(cardData?.color || '').toLowerCase();
+  return normalizeDepartmentName(
+    departments.find(department => department.color.toLowerCase() === color)?.name || ''
+  );
 }
 
 function processExcel() {
