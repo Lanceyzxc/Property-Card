@@ -20,10 +20,10 @@ const PROPERTY_CUSTODIANS = {
   COTT: 'Irene P. Andres',
   COENG: 'Odello Dela Cruz',
   COED: 'Jeannete C. Abaquita',
-  CANR: 'Bernadette Sta. Catalina,R.Agr.,LPT',
+  CANR: 'Bernadette Sta. Catalina',
   CFAST: 'Edgardo V. Teope',
   IABD: 'Mar Joy T. Abo',
-  CCMS: 'Zyra D. Chang, LPT'
+  CCMS: 'Zyra D. Chang,'
 };
 
 function normalizeDepartmentName(value) {
