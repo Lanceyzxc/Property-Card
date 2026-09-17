@@ -452,6 +452,42 @@ function closeSelectPanel() {
   panel.classList.remove('open');
 }
 
+function updateCardsDateTime() {
+  const container = document.getElementById('pages-container');
+  if (!container) return;
+
+  let dateTime = container.querySelector('.cards-datetime');
+  if (!dateTime) {
+    dateTime = document.createElement('div');
+    dateTime.className = 'cards-datetime';
+    dateTime.id = 'cards-datetime';
+    dateTime.setAttribute('aria-live', 'polite');
+    dateTime.innerHTML = `
+      <div class="cards-brand-title">UNIVERSITY OF CAMARINES NORTE</div>
+      <div class="cards-section-title">PROPERTY TAG</div>
+      <div class="date-primary">
+        <span class="date-weekday" data-date-weekday></span>
+        <span class="date-day" data-date-day></span>
+      </div>
+      <div class="date-secondary">
+        <span data-date-month-year></span>
+        <span class="date-divider" aria-hidden="true">•</span>
+        <span data-date-time></span>
+      </div>
+    `;
+    container.prepend(dateTime);
+  }
+
+  const now = new Date();
+  dateTime.querySelector('[data-date-weekday]').textContent = new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(now);
+  dateTime.querySelector('[data-date-day]').textContent = new Intl.DateTimeFormat(undefined, { day: 'numeric' }).format(now);
+  dateTime.querySelector('[data-date-month-year]').textContent = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(now);
+  dateTime.querySelector('[data-date-time]').textContent = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', second: '2-digit' }).format(now);
+}
+
+updateCardsDateTime();
+window.setInterval(updateCardsDateTime, 1000);
+
 function addCards(amount) {
   for (let i = 0; i < amount; i++) {
     const defaultColor = isMainDepartment()
@@ -477,6 +513,7 @@ function restoreDefaultCards() {
 
 function createSingleCard(initColor, cardData = null) {
   const container = document.getElementById('pages-container');
+  updateCardsDateTime();
   const lastPage = container.lastElementChild;
   let lastPageGrid = lastPage ? lastPage.querySelector('.cards-grid') : null;
 
@@ -795,6 +832,7 @@ function renderEmptyDepartmentState(departmentName = 'this department') {
       </div>
     </div>
   `;
+  updateCardsDateTime();
 }
 
 function reorganizePages(cardsList) {
@@ -802,6 +840,7 @@ function reorganizePages(cardsList) {
   const cardsToRender = Array.isArray(cardsList) ? cardsList : allCards;
 
   container.innerHTML = '';
+  updateCardsDateTime();
 
   if (cardsToRender.length === 0) {
     const filterEl = document.getElementById('filter-dept');
