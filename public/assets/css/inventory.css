@@ -294,6 +294,7 @@ body {
 .tag-dates .tag-field strong, .tag-signatures .tag-field strong { order: 1; }
 .tag-dates .tag-field span, .tag-signatures .tag-field span { order: 2; }
 .tag-dates .tag-field strong, .tag-signatures .tag-field strong { width: 100%; }
+.tag-dates [data-field="personAccountable"] { overflow: visible; }
 .tag-signatures .tag-field strong { min-height: 19px; overflow: visible; white-space: nowrap; }
 .empty-inventory { grid-column: 1 / -1; padding: 80px 20px; text-align: center; color: #666; font-size: 20px; }
 
@@ -595,7 +596,7 @@ body {
   }
 
   .inventory-print-sig-block {
-    width: 250px;
+    width: 270px;
     display: flex;
     flex-direction: column;
     text-align: center;
@@ -608,6 +609,7 @@ body {
     min-height: 20px;
     margin-bottom: 2px;
     white-space: nowrap;
+    overflow: hidden;
   }
 
   .inventory-print-sig-line {

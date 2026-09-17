@@ -223,6 +223,7 @@ async function renderTags() {
     `).join(''));
     const renderedTags = [...grid.querySelectorAll('.inventory-tag-wrap')].slice(-batchSize);
     setupInventoryEditing(renderedTags);
+    fitPersonAccountableNames(renderedTags);
     fitSignatureNames(renderedTags);
     renderInventoryQRCodes();
     await new Promise(resolve => window.setTimeout(resolve, 0));
@@ -322,7 +323,7 @@ function buildInventoryPrintPage(records) {
     footer.innerHTML = `
       <div class="inventory-print-footer-row">
         <div class="inventory-print-sig-block">
-          <div class="inventory-print-sig-val">${escapeHtml(getPersonAccountable(record))}</div>
+          <div class="inventory-print-sig-val inventory-print-person-accountable">${escapeHtml(getPersonAccountable(record))}</div>
           <div class="inventory-print-sig-line"></div>
           <div class="inventory-print-sig-label">Person Accountable</div>
         </div>
@@ -404,6 +405,7 @@ function printVisibleInventory() {
   }
 
   document.body.appendChild(sheet);
+  fitPrintPersonAccountableNames(sheet);
   window.setTimeout(() => {
     window.print();
     window.setTimeout(() => sheet.remove(), 400);
@@ -428,6 +430,7 @@ function printSelectedInventory() {
   }
 
   document.body.appendChild(sheet);
+  fitPrintPersonAccountableNames(sheet);
   window.setTimeout(() => {
     window.print();
     window.setTimeout(() => sheet.remove(), 400);
@@ -440,6 +443,7 @@ function setupInventoryEditing(scope = document) {
     : [...(scope instanceof Element ? scope : document).querySelectorAll('[contenteditable="true"][data-field]')];
   elements.forEach(element => {
     element.addEventListener('input', () => {
+      if (element.closest('.tag-dates')) fitPersonAccountableNames();
       if (element.closest('.tag-signatures')) fitSignatureNames();
     });
     element.addEventListener('blur', () => {
@@ -458,6 +462,27 @@ function setupInventoryEditing(scope = document) {
       firebase.firestore().collection('propertyTags').doc(record.cardId).update({ [fieldName]: value })
         .catch(error => console.error('Inventory tag save error:', error));
     });
+  });
+}
+
+function fitPersonAccountableNames(scope = document) {
+  const elements = Array.isArray(scope)
+    ? scope.flatMap(item => [...item.querySelectorAll('.tag-dates [data-field="personAccountable"]')])
+    : [...(scope instanceof Element ? scope : document).querySelectorAll('.tag-dates [data-field="personAccountable"]')];
+  elements.forEach(element => {
+    element.style.fontSize = '';
+    while (element.scrollWidth > element.clientWidth && parseFloat(getComputedStyle(element).fontSize) > 7) {
+      element.style.fontSize = `${parseFloat(getComputedStyle(element).fontSize) - 0.5}px`;
+    }
+  });
+}
+
+function fitPrintPersonAccountableNames(scope) {
+  scope.querySelectorAll('.inventory-print-person-accountable').forEach(element => {
+    element.style.fontSize = '';
+    while (element.scrollWidth > element.clientWidth && parseFloat(getComputedStyle(element).fontSize) > 11) {
+      element.style.fontSize = `${parseFloat(getComputedStyle(element).fontSize) - 0.5}px`;
+    }
   });
 }
 
