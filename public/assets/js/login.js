@@ -6,7 +6,8 @@ const errorMessage = document.getElementById('department-login-error');
 
 function normalizeDepartmentName(value) {
   const department = String(value || '').trim().toUpperCase();
-  return department === 'GASS' ? 'MAIN' : department;
+  if (department === 'GASS') return 'MAIN';
+  return department === 'IABD' ? 'ENTIENZA' : department;
 }
 
 const rememberedDepartment = normalizeDepartmentName(localStorage.getItem('propertyCardDepartment'));

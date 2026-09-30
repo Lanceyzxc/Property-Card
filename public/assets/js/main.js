@@ -4,7 +4,7 @@ const departments = [
   { name: "CFAST", color: "#38b6ff" },
   { name: "CCMS", color: "#737373" },
   { name: "COED", color: "#004aad" },
-  { name: "IABD", color: "#ff751f" },
+  { name: "ENTIENZA", color: "#ff751f" },
   { name: "CBPA", color: "#faf901" },
   { name: "CANR", color: "#499632" },
   { name: "COENG", color: "#ffde59" },
@@ -34,7 +34,8 @@ const appSplashStartedAt = Date.now();
 
 function normalizeDepartmentName(value) {
   const department = String(value || '').trim().toUpperCase();
-  return department === 'GASS' ? 'MAIN' : department;
+  if (department === 'GASS') return 'MAIN';
+  return department === 'IABD' ? 'ENTIENZA' : department;
 }
 
 function isMainDepartment() {
@@ -891,7 +892,10 @@ async function loadCardsFromFirestore() {
   try {
     let cardsQuery = firebaseFirestore.collection('propertyTags');
     if (!isMainDepartment()) {
-      cardsQuery = cardsQuery.where('dept', '==', normalizeDepartmentName(window.currentDepartment));
+      const currentDepartment = normalizeDepartmentName(window.currentDepartment);
+      cardsQuery = currentDepartment === 'ENTIENZA'
+        ? cardsQuery.where('dept', 'in', ['ENTIENZA', 'IABD'])
+        : cardsQuery.where('dept', '==', currentDepartment);
     }
     const snapshot = await Promise.race([
       cardsQuery.get(),
@@ -917,7 +921,7 @@ async function loadCardsFromFirestore() {
     const renderSavedCard = (doc) => {
       const cardData = doc.data();
       const deptName = cardData.dept || '';
-      const matchedDept = departments.find(d => d.name === deptName);
+      const matchedDept = departments.find(d => d.name === normalizeDepartmentName(deptName));
       const color = cardData.color || (matchedDept ? matchedDept.color : departments[0].color);
       cardData.cardId = doc.id;
       createSingleCard(color, cardData);
@@ -1333,7 +1337,9 @@ async function populateFromExcel(dataRows) {
     const dateCountedFromRow = getPreferredExcelValue(row, ['Date Counted', 'Counted Date']);
     const dateFromRow = getPreferredExcelValue(row, ['Date Acquired', 'Date Delivered', 'Date of Acquisition', 'Acquired Date']);
     const fundFromRow = getPreferredExcelValue(row, ['Fund', 'Fund Cluster']);
-    const endUserFromRow = formatValue(getExcelValue(row, 'Department'));
+    const endUserFromRow = normalizedRowDepartment === 'ENTIENZA'
+      ? normalizedRowDepartment
+      : rowDepartmentValue;
     const requestedByFromRow = getPreferredExcelValue(row, ['Requested by', 'Requested By', 'Requestor', 'End User', 'End-User']);
     const supplierFromRow = getPreferredExcelValue(row, ['Supplier', 'Supplier Name', 'Vendor']);
     const acquisitionCostFromRow = getPreferredExcelValue(row, ['Acquisition Cost', 'Unit Cost', 'Cost', 'Amount', 'Total Cost']);

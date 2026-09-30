@@ -22,13 +22,14 @@ const PROPERTY_CUSTODIANS = {
   COED: 'Jeannete C. Abaquita',
   CANR: 'Bernadette Sta. Catalina',
   CFAST: 'Edgardo V. Teope',
-  IABD: 'Mar Joy T. Abo',
+  ENTIENZA: 'Mar Joy T. Abo',
   CCMS: 'Zyra D. Chang,'
 };
 
 function normalizeDepartmentName(value) {
   const department = text(value).trim().toUpperCase();
-  return department === 'GASS' ? 'MAIN' : department;
+  if (department === 'GASS') return 'MAIN';
+  return department === 'IABD' ? 'ENTIENZA' : department;
 }
 
 function getInventoryDepartment() {
