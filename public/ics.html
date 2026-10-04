@@ -275,9 +275,10 @@
         }
 
         db.collection('propertyTags').doc(id).get()
+            .then(doc => doc.exists ? doc : db.collection('archivedPropertyTags').doc(id).get())
             .then(doc => {
                 if (!doc.exists) {
-                    console.warn('No document for id', id);
+                    console.warn('No active or archived document for id', id);
                     return;
                 }
 

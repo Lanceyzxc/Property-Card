@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#e5e7e4">
+  <title>Analytics &amp; Reports | UCN ProCard System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/analytics.css?v=20261002.4">
+  <link rel="icon" href="assets/images/ucn.png" type="image/x-icon">
+</head>
+<body>
+  <aside class="report-sidebar">
+    <a class="brand-lockup" href="index.html" aria-label="UCN ProCard home">
+      <img src="assets/images/ucn.png" alt="">
+      <span><strong>UCN</strong><small>PROCARD SYSTEM</small></span>
+    </a>
+    <div class="sidebar-rule"></div>
+    <p class="sidebar-caption">WORKSPACE</p>
+    <nav class="side-nav" aria-label="Main navigation">
+      <a href="index.html"><i class="fa-solid fa-layer-group" aria-hidden="true"></i>Property cards</a>
+      <a href="inventory.html"><i class="fa-solid fa-tag" aria-hidden="true"></i>Inventory tags</a>
+      <a href="archive.html"><i class="fa-solid fa-box-archive" aria-hidden="true"></i>Archived cards</a>
+      <a class="active" href="analytics.html" aria-current="page"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i>Analytics &amp; reports</a>
+    </nav>
+    <div class="sidebar-note">
+      <span class="live-dot" aria-hidden="true"></span>
+      <div><strong>Live report</strong><small id="sync-status">Connecting to records...</small></div>
+    </div>
+    <div class="sidebar-bottom"><span>SUPPLY &amp; PROPERTY</span><span>MANAGEMENT OFFICE</span></div>
+  </aside>
+
+  <main class="report-main">
+    <header class="report-header">
+      <div>
+        <p class="eyebrow"><span class="eyebrow-mark"></span> RECORDS OVERVIEW <span id="report-period-label">ALL PERIODS</span></p>
+        <h1>Analytics <span>&amp; Reports</span></h1>
+        <p class="header-copy">A clearer view of property records, acquisition value, and documentation progress.</p>
+      </div>
+      <div class="header-actions">
+        <button class="action-button quiet-button" id="export-report" type="button" title="Download the filtered report as CSV"><i class="fa-solid fa-arrow-down-to-line" aria-hidden="true"></i><span>Export CSV</span></button>
+        <button class="action-button print-button" id="print-report" type="button" title="Print this report"><i class="fa-solid fa-print" aria-hidden="true"></i><span>Print report</span></button>
+      </div>
+    </header>
+
+    <section class="filter-strip" aria-label="Report filters">
+      <div class="filter-heading"><i class="fa-solid fa-sliders" aria-hidden="true"></i><span>REPORT FILTERS</span></div>
+      <label class="filter-control">Department<select id="department-filter"><option value="ALL">All departments</option></select></label>
+      <label class="filter-control">Acquisition year<select id="year-filter"><option value="ALL">All years</option></select></label>
+      <button class="reset-button" id="reset-filters" type="button"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset</button>
+      <p class="filter-result" id="filter-result" aria-live="polite">Preparing report...</p>
+    </section>
+
+    <div id="report-message" class="report-message" role="status" aria-live="polite" hidden></div>
+
+    <section class="metric-grid" aria-label="Summary metrics">
+      <article class="metric-card metric-ink">
+        <div class="metric-top"><span>PROPERTY RECORDS</span><i class="fa-solid fa-cube" aria-hidden="true"></i></div>
+        <strong class="metric-value" id="metric-records">--</strong>
+        <div class="metric-foot"><span class="metric-dot"></span><span id="metric-records-note">Across selected scope</span></div>
+        <span class="metric-index">01</span>
+      </article>
+      <article class="metric-card metric-green">
+        <div class="metric-top"><span>ASSETS COUNTED</span><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i></div>
+        <strong class="metric-value" id="metric-quantity">--</strong>
+        <div class="metric-foot"><span class="metric-dot"></span><span>Sum of recorded quantities</span></div>
+        <span class="metric-index">02</span>
+      </article>
+      <article class="metric-card metric-coral">
+        <div class="metric-top"><span>ACQUISITION VALUE</span><i class="fa-solid fa-coins" aria-hidden="true"></i></div>
+        <strong class="metric-value metric-currency" id="metric-value">--</strong>
+        <div class="metric-foot"><span class="metric-dot"></span><span>From documented acquisition costs</span></div>
+        <span class="metric-index">03</span>
+      </article>
+    </section>
+
+    <section class="visual-grid" aria-label="Record breakdowns">
+      <article class="report-panel department-panel">
+        <div class="panel-heading">
+          <div><p class="panel-kicker">WHERE RECORDS LIVE</p><h2>Department footprint</h2></div>
+          <span class="panel-icon department-icon"><i class="fa-solid fa-chart-bar" aria-hidden="true"></i></span>
+        </div>
+        <p class="panel-description">Record volume and documented value, compared by department.</p>
+        <div class="chart-legend"><span><i class="legend-swatch records-swatch"></i>Records</span><span><i class="legend-swatch value-swatch"></i>Acquisition value</span></div>
+        <div id="department-chart" class="department-chart" role="img" aria-label="Department record count and value breakdown"></div>
+      </article>
+      <article class="report-panel year-panel">
+        <div class="panel-heading">
+          <div><p class="panel-kicker">ACQUISITION HISTORY</p><h2>Records by year</h2></div>
+          <span class="panel-icon year-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
+        </div>
+        <p class="panel-description">Compare annual record volume with the total recorded acquisition value.</p>
+        <div class="year-legend" aria-label="Chart legend"><span><i class="legend-swatch records-swatch"></i>Records (left scale)</span><span><i class="legend-line"></i>Acquisition value (right scale)</span></div>
+        <div id="year-chart" class="year-chart" role="img" aria-label="Records by acquisition year"></div>
+        <p class="chart-note"><i class="fa-regular fa-circle-question" aria-hidden="true"></i> Bars use the left scale; the line uses the right scale. Undated records are included in totals, but not in this graph.</p>
+      </article>
+    </section>
+
+    <section class="report-panel detail-panel">
+      <div class="panel-heading detail-heading">
+        <div><p class="panel-kicker">DEPARTMENT BREAKDOWN</p><h2>Department report</h2></div>
+        <span class="panel-context" id="table-context">Live Firestore records</span>
+      </div>
+      <p class="panel-description">Compare record counts, asset quantities, acquisition value, and the latest recorded acquisition date by department.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>DEPARTMENT</th><th>RECORDS</th><th>ASSET QTY</th><th>ACQUISITION VALUE</th><th>LAST ACQUIRED</th></tr></thead>
+          <tbody id="department-table"><tr><td colspan="5" class="table-empty">Loading department report...</td></tr></tbody>
+          <tfoot id="department-table-footer"></tfoot>
+        </table>
+      </div>
+      <div class="report-footnote"><span class="footnote-symbol">i</span><span>Acquisition value totals only costs entered as numbers. This report reflects saved records and does not estimate missing values.</span></div>
+    </section>
+
+    <section class="breakdown-section" aria-labelledby="stakeholder-heading">
+      <div class="section-heading">
+        <div><p class="panel-kicker">RECORD OWNERSHIP &amp; FUNDING</p><h2 id="stakeholder-heading">Supplier, fund &amp; requestor</h2></div>
+        <p>See how many records and assets are associated with each entry.</p>
+      </div>
+      <div class="breakdown-grid">
+        <article class="report-panel breakdown-panel">
+          <div class="breakdown-title"><span class="breakdown-icon supplier-tone"><i class="fa-solid fa-truck-field" aria-hidden="true"></i></span><div><p class="panel-kicker">PROCUREMENT</p><h3>By supplier</h3></div></div>
+          <p class="panel-description">Suppliers represented in the filtered records.</p>
+          <p class="breakdown-summary" id="supplier-summary">Loading supplier totals...</p>
+          <div class="table-scroll">
+            <table><thead><tr><th>SUPPLIER</th><th>RECORDS</th><th>ASSETS</th><th>VALUE</th></tr></thead><tbody id="supplier-table"><tr><td colspan="4" class="table-empty">Loading...</td></tr></tbody></table>
+          </div>
+          <button class="show-all-button" id="toggle-suppliers" type="button" hidden>View all suppliers</button>
+        </article>
+        <article class="report-panel breakdown-panel">
+          <div class="breakdown-title"><span class="breakdown-icon fund-tone"><i class="fa-solid fa-landmark" aria-hidden="true"></i></span><div><p class="panel-kicker">BUDGET SOURCE</p><h3>By fund</h3></div></div>
+          <p class="panel-description">Fund sources assigned to property records.</p>
+          <p class="breakdown-summary" id="fund-summary">Loading fund totals...</p>
+          <div class="table-scroll">
+            <table><thead><tr><th>FUND</th><th>RECORDS</th><th>ASSETS</th><th>VALUE</th></tr></thead><tbody id="fund-table"><tr><td colspan="4" class="table-empty">Loading...</td></tr></tbody></table>
+          </div>
+          <button class="show-all-button" id="toggle-funds" type="button" hidden>View all funds</button>
+        </article>
+        <article class="report-panel breakdown-panel requestor-panel">
+          <div class="breakdown-title"><span class="breakdown-icon requestor-tone"><i class="fa-solid fa-user-check" aria-hidden="true"></i></span><div><p class="panel-kicker">REQUEST ACTIVITY</p><h3>By requestor</h3></div></div>
+          <p class="panel-description">Requestors linked to the filtered property records.</p>
+          <p class="breakdown-summary" id="requestor-summary">Loading requestor totals...</p>
+          <div class="table-scroll">
+            <table><thead><tr><th>REQUESTOR</th><th>RECORDS</th><th>ASSETS</th><th>VALUE</th></tr></thead><tbody id="requestor-table"><tr><td colspan="4" class="table-empty">Loading...</td></tr></tbody></table>
+          </div>
+          <button class="show-all-button" id="toggle-requestors" type="button" hidden>View all requestors</button>
+        </article>
+      </div>
+      <p class="breakdown-note"><i class="fa-regular fa-circle-info" aria-hidden="true"></i> Records without a supplier, fund, or requestor are grouped under “Not recorded.” Asset totals use the quantity saved in each record.</p>
+    </section>
+
+    <footer class="report-footer"><span>UCN PROCard SYSTEM <i></i> SUPPLY &amp; PROPERTY MANAGEMENT OFFICE</span><span id="report-generated">REPORT GENERATED --</span></footer>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="assets/js/analytics.js?v=20261002.2"></script>
+</body>
+</html>

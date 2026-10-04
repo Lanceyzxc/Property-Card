@@ -10,9 +10,10 @@ The main data collection is:
 
 ```text
 propertyTags/{cardId}
+archivedPropertyTags/{cardId}
 ```
 
-The Property Cards and Inventory Tags pages use this same collection.
+The Property Cards and Inventory Tags pages use `propertyTags`. Archived cards are moved to `archivedPropertyTags` with the same document ID; QR form pages check the active collection first and then the archive.
 
 Access is selected through `login.html`. The current implementation stores the normalized department in `sessionStorage`; **Remember me** additionally stores the department and preference in `localStorage`. This is a client-side access gate and is not a substitute for Firebase Authentication or Firestore security rules.
 
@@ -22,13 +23,16 @@ Access is selected through `login.html`. The current implementation stores the n
 flowchart LR
     A[Browser] --> B[public/index.html]
     A --> C[public/inventory.html]
+    A --> K[public/archive.html]
     A --> I[public/login.html]
     B --> D[main.js]
     B --> E[print.js]
     C --> F[inventory.js]
+    K --> L[archive.js]
     I --> J[login.js]
     D --> G[(Firebase Firestore)]
     F --> G
+    L --> G
     D --> H[par.html or ics.html]
 ```
 
@@ -240,6 +244,8 @@ propertyCustodian
 qrUrl
 savedAt
 ```
+
+Archived documents in `archivedPropertyTags/{cardId}` retain these fields and add an `archivedAt` timestamp.
 
 ### Field groups
 

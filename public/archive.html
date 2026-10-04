@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#e5e7e4">
+  <title>Archived Cards | UCN ProCard System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/analytics.css?v=20261002.4">
+  <link rel="stylesheet" href="assets/css/archive.css?v=20261005.2">
+  <link rel="icon" href="assets/images/ucn.png" type="image/x-icon">
+</head>
+<body>
+  <aside class="report-sidebar">
+    <a class="brand-lockup" href="index.html" aria-label="UCN ProCard home">
+      <img src="assets/images/ucn.png" alt="">
+      <span><strong>UCN</strong><small>PROCARD SYSTEM</small></span>
+    </a>
+    <div class="sidebar-rule"></div>
+    <p class="sidebar-caption">WORKSPACE</p>
+    <nav class="side-nav" aria-label="Main navigation">
+      <a href="index.html"><i class="fa-solid fa-layer-group" aria-hidden="true"></i>Property cards</a>
+      <a href="inventory.html"><i class="fa-solid fa-tag" aria-hidden="true"></i>Inventory tags</a>
+      <a class="active" href="archive.html" aria-current="page"><i class="fa-solid fa-box-archive" aria-hidden="true"></i>Archived cards</a>
+      <a href="analytics.html"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i>Analytics &amp; reports</a>
+    </nav>
+    <div class="sidebar-bottom"><span>SUPPLY &amp; PROPERTY</span><span>MANAGEMENT OFFICE</span></div>
+  </aside>
+
+  <main class="report-main archive-main">
+    <header class="report-header">
+      <div>
+        <p class="eyebrow"><span class="eyebrow-mark"></span> RECORDS</p>
+        <h1>Archived <span>Cards</span></h1>
+      </div>
+      <div class="header-actions">
+        <a class="action-button quiet-button" href="index.html"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span>Property cards</span></a>
+      </div>
+    </header>
+
+    <div id="archive-message" class="report-message" role="status" aria-live="polite" hidden></div>
+
+    <section class="filter-strip archive-filter-strip" aria-label="Archive search">
+      <div class="filter-heading"><i class="fa-solid fa-box-archive" aria-hidden="true"></i><span>ARCHIVE</span></div>
+      <label class="filter-control archive-search">Search<input id="archive-search" type="search" placeholder="Property number, item, or department"></label>
+      <p class="filter-result" id="archive-count" aria-live="polite">Loading archived cards...</p>
+    </section>
+
+    <section class="report-panel detail-panel archive-panel" aria-label="Archived property cards">
+      <div class="panel-heading detail-heading">
+        <div><p class="panel-kicker">PRESERVED RECORDS</p><h2>Archived records</h2></div>
+        <span class="panel-context" id="archive-scope">Current department</span>
+      </div>
+      <div class="archive-bulk-bar" role="toolbar" aria-label="Selected archived card actions">
+        <div class="archive-selection-tools">
+          <button class="archive-tool-button" id="select-visible" type="button"><i class="fa-regular fa-square-check" aria-hidden="true"></i><span>Select visible</span></button>
+          <button class="archive-tool-button" id="clear-selection" type="button"><i class="fa-solid fa-xmark" aria-hidden="true"></i><span>Clear</span></button>
+          <span class="archive-selected-count" id="archive-selected-count" aria-live="polite">0 selected</span>
+        </div>
+        <div class="archive-bulk-actions">
+          <button class="archive-tool-button archive-restore-selected" id="restore-selected" type="button" disabled><i class="fa-solid fa-rotate-left" aria-hidden="true"></i><span>Restore selected</span></button>
+          <button class="archive-tool-button archive-delete-selected" id="delete-selected" type="button" disabled><i class="fa-solid fa-trash" aria-hidden="true"></i><span>Delete selected</span></button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="archive-table">
+          <thead>
+            <tr><th class="archive-select-heading"><input id="select-all-visible" type="checkbox" aria-label="Select all visible archived cards"></th><th>DEPARTMENT</th><th>INVENTORY TAG</th><th>PROPERTY NO.</th><th>ITEM DESCRIPTION</th><th>ARCHIVED</th><th>ACTIONS</th></tr>
+          </thead>
+          <tbody id="archive-records"><tr><td colspan="7" class="table-empty">Loading archived cards...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="archive-modal" id="archive-confirm-dialog" aria-labelledby="archive-dialog-title" aria-describedby="archive-dialog-message">
+    <div class="archive-modal-mark" aria-hidden="true"><i class="fa-solid fa-box-archive"></i></div>
+    <h2 id="archive-dialog-title">Confirm action</h2>
+    <p id="archive-dialog-message"></p>
+    <div class="archive-modal-actions">
+      <button class="archive-tool-button" id="archive-dialog-cancel" type="button">Cancel</button>
+      <button class="archive-tool-button archive-modal-confirm" id="archive-dialog-confirm" type="button">Continue</button>
+    </div>
+  </dialog>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="assets/js/archive.js?v=20261005.2"></script>
+</body>
+</html>

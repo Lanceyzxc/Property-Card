@@ -542,7 +542,7 @@ function createSingleCard(initColor, cardData = null) {
         <select class="neu-select dept-select" style="flex-grow: 1;" onchange="updateCardColor(this, ${currentIndex})">
           ${generateOptions(initColor)}
         </select>
-        <button class="neu-btn danger" style="padding: 8px; width: auto; margin-left: 10px; flex-shrink: 0;" onclick="deleteCard(this)" title="Delete Card">🗑️</button>
+        <button class="neu-btn danger" style="padding: 8px; width: auto; margin-left: 10px; flex-shrink: 0;" onclick="deleteCard(this)" title="Archive Card" aria-label="Archive card"><i class="fa-solid fa-box-archive" aria-hidden="true"></i></button>
       </div>
       <div class="label-container">
         <div class="top-white-space"></div>
@@ -657,10 +657,10 @@ async function deleteCard(btnElement) {
   if (!cardWrapper) return;
 
   setDeleteLoadingState(true);
-  updateFirebaseStatus('Deleting card... Please wait.', '#004aad');
+  updateFirebaseStatus('Archiving card... Please wait.', '#004aad');
 
   try {
-    await deleteCardRecord(cardWrapper);
+    await archiveCardRecord(cardWrapper);
 
     allCards = allCards.filter(card => card !== cardWrapper);
     cardWrapper.remove();
@@ -672,16 +672,16 @@ async function deleteCard(btnElement) {
     if (allCards.length === 0) {
       restoreDefaultCards();
       refreshDashboardSummary();
-      showAlert('Card deleted successfully. No cards remained, so the default cards have been restored.');
+      showAlert('Card archived successfully. No active cards remained, so blank entry cards have been restored.');
     } else {
-      showAlert('Card deleted successfully.');
+      showAlert('Card archived successfully.');
     }
 
-    updateFirebaseStatus('Delete completed.', '#499632');
+    updateFirebaseStatus('Archive completed.', '#499632');
   } catch (err) {
-    console.error('Single card delete failed', err);
-    updateFirebaseStatus('Card delete failed on the server.', '#9a0603');
-    showAlert('The card could not be deleted. Please try again.');
+    console.error('Single card archive failed', err);
+    updateFirebaseStatus('Card archive failed on the server.', '#9a0603');
+    showAlert('The card could not be archived. It remains in the active list. Please try again.');
   } finally {
     setDeleteLoadingState(false);
   }
@@ -743,16 +743,28 @@ function setSelectionMode(enabled) {
   document.body.classList.toggle('selection-mode', enabled);
 }
 
-async function deleteCardRecord(cardWrapper) {
+async function archiveCardRecord(cardWrapper) {
   if (!firebaseInitialized || !firebaseFirestore) return;
   const cardId = cardWrapper.dataset.cardId;
   if (!cardId) return;
 
-  try {
-    await firebaseFirestore.collection('propertyTags').doc(cardId).delete();
-  } catch (err) {
-    console.warn('Firestore delete failed', err);
-  }
+  const activeRef = firebaseFirestore.collection('propertyTags').doc(cardId);
+  const archiveRef = firebaseFirestore.collection('archivedPropertyTags').doc(cardId);
+  const cardData = getCardData(cardWrapper);
+  cardData.cardId = cardId;
+  cardData.qrUrl = `${getPublicBaseUrl().replace(/\/$/, '')}/${getFormPath(cardData.propertyNo)}?id=${encodeURIComponent(cardId)}`;
+  await firebaseFirestore.runTransaction(async transaction => {
+    const activeSnapshot = await transaction.get(activeRef);
+    const archiveSnapshot = await transaction.get(archiveRef);
+    if (archiveSnapshot.exists) throw new Error(`An archived record already exists for ${cardId}`);
+
+    transaction.set(archiveRef, {
+      ...(activeSnapshot.exists ? activeSnapshot.data() : {}),
+      ...cardData,
+      archivedAt: new Date().toISOString()
+    });
+    if (activeSnapshot.exists) transaction.delete(activeRef);
+  });
 }
 
 async function deleteSelectedCards() {
@@ -762,7 +774,7 @@ async function deleteSelectedCards() {
     return;
   }
 
-  const confirmDelete = await showConfirm(`Delete ${selectedCards.length} selected card(s)? This will also remove saved cards from the database.`);
+  const confirmDelete = await showConfirm(`Archive ${selectedCards.length} selected card(s)? Their printed QR codes will continue to work. You can restore or permanently delete them from Archived Cards.`);
   if (!confirmDelete) return;
 
   const filterEl = document.getElementById('filter-dept');
@@ -771,38 +783,53 @@ async function deleteSelectedCards() {
     selectedCards.every(card => getCardDepartmentName(card) === activeDepartmentFilter);
 
   setDeleteLoadingState(true);
-  updateFirebaseStatus('Deleting selected cards... Please wait.', '#004aad');
+  updateFirebaseStatus('Archiving selected cards... Please wait.', '#004aad');
 
   try {
-    await Promise.all(selectedCards.map((cardWrapper) => deleteCardRecord(cardWrapper)));
+    const results = await Promise.allSettled(selectedCards.map(cardWrapper => archiveCardRecord(cardWrapper)));
+    const archivedCards = [];
+    let failedCount = 0;
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        archivedCards.push(selectedCards[index]);
+      } else {
+        failedCount += 1;
+        console.error('Selected card archive failed', result.reason);
+      }
+    });
 
-    selectedCards.forEach((cardWrapper) => {
+    archivedCards.forEach((cardWrapper) => {
       allCards = allCards.filter(card => card !== cardWrapper);
       cardWrapper.remove();
       totalCardCount--;
     });
 
-    if (allCards.length === 0) {
-      restoreDefaultCards();
-      refreshDashboardSummary();
-      if (filterEl) filterEl.value = 'ALL';
-      showAlert('Selected cards were deleted successfully. No cards remained, so the default cards have been restored.');
-    } else {
-      if (shouldResetFilterAfterDelete) {
+    if (archivedCards.length > 0) {
+      if (allCards.length === 0) {
+        restoreDefaultCards();
+        if (filterEl) filterEl.value = 'ALL';
+      } else if (shouldResetFilterAfterDelete) {
         resetFilterToAllDepartments();
       } else {
         reorganizePages();
       }
       refreshDashboardSummary();
       clearSelection();
-      showAlert('Selected cards were deleted successfully.');
     }
 
-    updateFirebaseStatus('Delete completed.', '#499632');
+    if (failedCount > 0) {
+      updateFirebaseStatus(`${failedCount} card(s) could not be archived.`, '#9a0603');
+      showAlert(`${archivedCards.length} card(s) archived; ${failedCount} could not be archived and remain active.`);
+    } else {
+      updateFirebaseStatus('Archive completed.', '#499632');
+      showAlert(allCards.length === 0
+        ? 'Selected cards were archived successfully. No active cards remained, so blank entry cards have been restored.'
+        : 'Selected cards were archived successfully.');
+    }
   } catch (err) {
-    console.error('Bulk delete failed', err);
-    updateFirebaseStatus('Some deletes failed on the server.', '#9a0603');
-    showAlert('Some selected cards could not be deleted. Please try again.');
+    console.error('Bulk archive failed', err);
+    updateFirebaseStatus('Some cards could not be archived.', '#9a0603');
+    showAlert('Some selected cards could not be archived. They remain in the active list. Please try again.');
   } finally {
     setDeleteLoadingState(false);
   }

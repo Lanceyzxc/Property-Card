@@ -48,6 +48,17 @@ function inventoryTagSortKey(record) {
   return text(record.savedAt) || text(record.cardId);
 }
 
+function compareInventoryTags(left, right) {
+  const leftMatch = text(left.inventoryTag).match(/^(\d{2})-(\d+)$/);
+  const rightMatch = text(right.inventoryTag).match(/^(\d{2})-(\d+)$/);
+  if (leftMatch && rightMatch) {
+    return Number(leftMatch[1]) - Number(rightMatch[1]) || Number(leftMatch[2]) - Number(rightMatch[2]);
+  }
+  if (leftMatch) return -1;
+  if (rightMatch) return 1;
+  return inventoryTagSortKey(left).localeCompare(inventoryTagSortKey(right));
+}
+
 function escapeHtml(value) {
   return text(value)
     .replace(/&/g, '&amp;')
@@ -69,31 +80,64 @@ function getPropertyCustodian(record) {
 
 async function ensureInventoryTags(records, firestore) {
   const year = String(new Date().getFullYear()).slice(-2);
-  const usedNumbers = new Set();
+  const counterRef = firestore.collection('inventoryTagCounters').doc(year);
+  let highestExistingNumber = 0;
 
   records.forEach(record => {
     const match = text(record.inventoryTag).match(/^(\d{2})-(\d+)$/);
-    if (match && match[1] === year) usedNumbers.add(Number(match[2]));
+    if (match && match[1] === year) {
+      highestExistingNumber = Math.max(highestExistingNumber, Number(match[2]));
+    }
   });
 
-  let nextNumber = 1;
+  await firestore.runTransaction(async transaction => {
+    const counterSnapshot = await transaction.get(counterRef);
+    const savedNumber = Number(counterSnapshot.exists ? counterSnapshot.data().lastNumber : 0) || 0;
+    const lastNumber = Math.max(savedNumber, highestExistingNumber);
+    if (!counterSnapshot.exists || lastNumber > savedNumber) {
+      transaction.set(counterRef, { lastNumber }, { merge: true });
+    }
+  });
+
   const missingRecords = records
     .filter(record => !text(record.inventoryTag))
     .sort((left, right) => inventoryTagSortKey(left).localeCompare(inventoryTagSortKey(right)));
 
-  // Stay below Firestore's 500-write batch limit so metadata updates remain reliable.
   for (let start = 0; start < missingRecords.length; start += 450) {
-    const batch = firestore.batch();
     const batchRecords = missingRecords.slice(start, start + 450);
-    batchRecords.forEach(record => {
-      while (usedNumbers.has(nextNumber)) nextNumber += 1;
-      record.inventoryTag = `${year}-${String(nextNumber).padStart(4, '0')}`;
-      usedNumbers.add(nextNumber);
-      nextNumber += 1;
-      batch.update(firestore.collection('propertyTags').doc(record.cardId), { inventoryTag: record.inventoryTag });
+    const assignedTags = await firestore.runTransaction(async transaction => {
+      const counterSnapshot = await transaction.get(counterRef);
+      const savedNumber = Number(counterSnapshot.exists ? counterSnapshot.data().lastNumber : 0) || 0;
+      let nextNumber = savedNumber;
+      const cardRefs = batchRecords.map(record => firestore.collection('propertyTags').doc(record.cardId));
+      const cardSnapshots = await Promise.all(cardRefs.map(cardRef => transaction.get(cardRef)));
+      const tags = new Map();
+
+      cardSnapshots.forEach((cardSnapshot, index) => {
+        if (!cardSnapshot.exists) return;
+
+        const existingTag = text(cardSnapshot.data().inventoryTag);
+        if (existingTag) {
+          tags.set(batchRecords[index].cardId, existingTag);
+          return;
+        }
+
+        nextNumber += 1;
+        const inventoryTag = `${year}-${String(nextNumber).padStart(3, '0')}`;
+        tags.set(batchRecords[index].cardId, inventoryTag);
+        transaction.update(cardRefs[index], { inventoryTag });
+      });
+
+      if (nextNumber > savedNumber) {
+        transaction.set(counterRef, { lastNumber: nextNumber }, { merge: true });
+      }
+      return tags;
     });
-    await batch.commit();
-  }
+
+    batchRecords.forEach(record => {
+      if (assignedTags.has(record.cardId)) record.inventoryTag = assignedTags.get(record.cardId);
+    });
+  } 
 }
 
 function field(label, value, fieldName, className = '') {
@@ -164,13 +208,13 @@ async function renderTags() {
   const department = document.getElementById('inventory-department').value;
   const currentDepartment = getInventoryDepartment();
   const records = inventoryRecords.filter(record => {
-    const haystack = [record.itemDescription, record.propertyNo, record.serialNo, record.dept, record.endUserLocation]
+    const haystack = [record.itemDescription, record.propertyNo, record.serialNo, record.dept, record.endUserLocation, getPersonAccountable(record)]
       .map(text).join(' ').toLowerCase();
     const matchesDepartment = isMainInventoryDepartment()
       ? (department === 'ALL' || record.dept === department)
       : record.dept === currentDepartment;
     return (!query || haystack.includes(query)) && matchesDepartment;
-  });
+  }).sort(compareInventoryTags);
 
   grid.classList.remove('is-loading');
   grid.setAttribute('aria-busy', 'false');

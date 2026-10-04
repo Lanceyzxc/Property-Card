@@ -10,6 +10,7 @@ This guide is for office staff and anyone who uses the application to create, re
 | Upload an Excel list | Property Cards page |
 | Create a blank property card | Property Cards page, **Add New Cards** |
 | Find a saved record | Property Cards search or department filter |
+| View or restore archived cards | **Archived Cards** page |
 | Print property tags | Property Cards page, **Print Tags** |
 | View inventory labels | **Inventory Tags** page |
 | Print selected inventory labels | Inventory Tags page, select tags, then **Print Selected** |
@@ -154,7 +155,7 @@ For a department other than `MAIN`, the department filter is hidden and all disp
 
 Use **Add New Cards** to choose a department and create one or more blank cards.
 
-### Select, print, or delete cards
+### Select, print, or archive cards
 
 Open **Batch Actions** to select cards.
 
@@ -162,7 +163,8 @@ Open **Batch Actions** to select cards.
 - **Select Visible** selects cards currently shown by the filter.
 - **Clear Selection** removes the selection.
 - **Print Selected** prints only selected cards.
-- **Delete Selected** removes selected cards after confirmation.
+- **Archive Selected** moves selected cards out of the active list while keeping their QR codes working.
+- Open **Archived Cards** to restore records or permanently delete them. Permanent deletion stops the associated QR code from loading the card details.
 - **Print Tags** prints all available cards.
 
 Always check the browser print preview before printing a full batch.
@@ -188,7 +190,7 @@ The property card print layout is designed to place up to ten cards on a print p
 5. Click outside an edited field so the change can be saved.
 6. Print all visible tags or select specific tags and print them.
 
-Missing inventory numbers are assigned automatically in the format `YY-NNNN`, for example `26-0001`.
+Missing inventory numbers are assigned automatically in the format `YY-NNN`, for example `26-001`.
 
 ### Inventory tag fields
 
