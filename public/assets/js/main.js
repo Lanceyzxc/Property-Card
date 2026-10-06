@@ -280,6 +280,20 @@ function getFormPath(propertyNo) {
     : 'par.html';
 }
 
+function getCardFormUrl(data) {
+  const params = new URLSearchParams({ id: data.cardId || '' });
+  if (data.dept) params.set('dept', normalizeDepartmentName(data.dept));
+  return `${getPublicBaseUrl().replace(/\/$/, '')}/${getFormPath(data.propertyNo)}?${params.toString()}`;
+}
+
+function createCardId() {
+  const department = normalizeDepartmentName(window.currentDepartment) || 'MAIN';
+  const uniquePart = window.crypto?.randomUUID
+    ? window.crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 12)}`;
+  return `card-${department.toLowerCase()}-${uniquePart}`;
+}
+
 function saveCardToFirebase(cardWrapper) {
   if (!firebaseInitialized || !firebaseFirestore) return;
   if (!cardWrapper) return;
@@ -291,8 +305,7 @@ function saveCardToFirebase(cardWrapper) {
   const cardId = data.cardId || `card-${Math.random().toString(36).substring(2, 10)}`;
   data.cardId = cardId;
   try {
-    const baseToUse = getPublicBaseUrl();
-    data.qrUrl = `${baseToUse.replace(/\/$/, '')}/${getFormPath(data.propertyNo)}?id=${encodeURIComponent(cardId)}`;
+    data.qrUrl = getCardFormUrl(data);
   } catch (e) {
     data.qrUrl = '';
   }
@@ -386,8 +399,7 @@ function collectCardPayload(cardWrapper) {
     unit: data.unit || 'pc'
   };
   if (data.cardId) {
-    const baseToUse = getPublicBaseUrl();
-    payload.url = `${baseToUse.replace(/\/$/, '')}/${getFormPath(data.propertyNo)}?id=${encodeURIComponent(data.cardId)}`;
+    payload.url = getCardFormUrl(data);
   }
   return payload;
 }
@@ -571,7 +583,7 @@ function createSingleCard(initColor, cardData = null) {
   const newCard = lastPageGrid.lastElementChild;
   const departmentSelect = newCard.querySelector('.dept-select');
   if (!isMainDepartment() && departmentSelect) departmentSelect.hidden = true;
-  newCard.dataset.cardId = cardData && cardData.cardId ? cardData.cardId : `card-${currentIndex}`;
+  newCard.dataset.cardId = cardData && cardData.cardId ? cardData.cardId : createCardId();
   allCards.push(newCard);
 
   if (!deferCardQrRendering) observeCardQRCode(newCard);
@@ -752,7 +764,7 @@ async function archiveCardRecord(cardWrapper) {
   const archiveRef = firebaseFirestore.collection('archivedPropertyTags').doc(cardId);
   const cardData = getCardData(cardWrapper);
   cardData.cardId = cardId;
-  cardData.qrUrl = `${getPublicBaseUrl().replace(/\/$/, '')}/${getFormPath(cardData.propertyNo)}?id=${encodeURIComponent(cardId)}`;
+  cardData.qrUrl = getCardFormUrl(cardData);
   await firebaseFirestore.runTransaction(async transaction => {
     const activeSnapshot = await transaction.get(activeRef);
     const archiveSnapshot = await transaction.get(archiveRef);

@@ -449,6 +449,24 @@
         el.innerText = value || '';
     }
 
+    function normalizeDepartmentName(value) {
+        const department = String(value || '').trim().toUpperCase();
+        if (department === 'GASS') return 'MAIN';
+        return department === 'IABD' ? 'ENTIENZA' : department;
+    }
+
+    function matchesCardDepartment(data, params) {
+        const recordDepartment = normalizeDepartmentName(data.dept || data.department || data.office);
+        const qrDepartment = normalizeDepartmentName(params.get('dept'));
+        const rememberedDepartment = localStorage.getItem('propertyCardRememberLogin') === 'true'
+            ? localStorage.getItem('propertyCardDepartment')
+            : '';
+        const activeDepartment = normalizeDepartmentName(sessionStorage.getItem('propertyCardDepartment') || rememberedDepartment);
+
+        if (qrDepartment && recordDepartment && qrDepartment !== recordDepartment) return false;
+        return !activeDepartment || activeDepartment === 'MAIN' || !recordDepartment || activeDepartment === recordDepartment;
+    }
+
     (function populateFromQuery() {
         const params = new URLSearchParams(window.location.search);
         const id = params.get('id');
@@ -467,6 +485,7 @@
                     return;
                 }
                 const data = doc.data();
+                if (!matchesCardDepartment(data, params)) return;
                 setText('val-fund', data.fund || '');
                 setText('val-fund-ics', data.fund || '');
                 setText('val-parno', data.icsParNo || id);
