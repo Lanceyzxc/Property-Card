@@ -14,6 +14,7 @@ Choose the guide for your role:
 |---|---|---|
 | [User Guide](docs/USER-GUIDE.md) | Office staff and non-technical users | Daily workflows, Excel imports, editing, searching, and printing |
 | [Developer Guide](docs/DEVELOPER-GUIDE.md) | Developers and maintainers | Setup, architecture, data model, deployment, and troubleshooting |
+| [Firebase Usage Setup](docs/FIREBASE-USAGE-SETUP.md) | Project owner | Connect the Vercel usage panel to read-only Google monitoring metrics |
 
 ## Features
 

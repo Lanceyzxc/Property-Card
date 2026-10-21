@@ -30,3 +30,13 @@ main/inventory integration tests failed for missing pending state. Both are
 GREEN after implementation; whole suite 20/20, syntax checks and diff check pass.
 Task 4: in progress. Official Vercel configuration docs checked: root api/
 functions coexist with public/ output; framework null disables autodetection.
+
+Task 4: local implementation complete. npm test 20/20 GREEN, server/API/service
+syntax and diff checks pass, local HTTP tests verify pages/assets/API, and
+credential/environment filenames are ignored. Setup guide and Vercel config
+are prepared. Live activation remains pending owner Google/Vercel access;
+no live authenticated request or production deployment has been performed.
+Browser layout and print inspection remain unavailable because no browser
+surface is connected. Tests run on installed Node 24.13.1; Vercel targets 22.x.
+
+Final review: pending independent whole-branch review.

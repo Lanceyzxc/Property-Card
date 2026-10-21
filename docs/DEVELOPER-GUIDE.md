@@ -4,7 +4,7 @@ This guide is for developers who maintain, run, deploy, or extend the project.
 
 ## Overview
 
-The project is a static browser application served by a small Node.js HTTP server. There is no application API in this repository. Browser JavaScript communicates directly with Firebase Firestore.
+The project is a static browser application served by a small Node.js HTTP server. Browser JavaScript communicates directly with Firebase Firestore. A read-only `/api/usage` endpoint runs on Vercel and the local server to provide aggregate monitoring data; see [Firebase Usage Setup](FIREBASE-USAGE-SETUP.md).
 
 The main data collection is:
 
@@ -36,7 +36,7 @@ flowchart LR
     D --> H[par.html or ics.html]
 ```
 
-The server only delivers static files. Firebase operations happen from browser JavaScript, so most functional changes belong in `public/assets/js/` rather than in `server.js`.
+The server delivers static files and the read-only monitoring endpoint. Firebase record operations happen from browser JavaScript, so most functional changes belong in `public/assets/js/`. Monitoring credentials stay server-side in `lib/firebase-usage.js` and must never be placed in `public/`.
 
 ## Project Structure
 
@@ -77,7 +77,7 @@ Property Card/
 - Node.js.
 - Internet access for Firebase and external browser libraries loaded from CDNs.
 
-There are currently no npm package dependencies.
+Run `npm ci` to install the Google authentication dependency and test-only DOM tools. Production uses Node 22.x.
 
 ### Start the server
 

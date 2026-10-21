@@ -64,6 +64,11 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.*
+!.env.example
+*service-account*.json
+*service_account*.json
+.vercel/
 
 # dataconnect generated files
 .dataconnect
