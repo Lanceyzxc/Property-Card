@@ -6,13 +6,22 @@
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' });
   const currentDay = data => data?.periodStart && day.format(new Date(data.periodStart)) === day.format(new Date(Date.now()));
 
-  for (const mount of mounts) {
+  for (const [index, mount] of mounts.entries()) {
     mount.classList.add('system-status');
     mount.innerHTML = '<p class="save-status" data-save-status role="status" aria-live="polite">Changes save automatically.</p>' +
-      '<details open><summary>Firebase usage <span class="usage-state" data-usage-state>Checking…</span></summary>' +
+      `<button class="usage-toggle" data-usage-toggle type="button" aria-expanded="false" aria-controls="firebase-usage-panel-${index}">View Firebase usage</button>` +
+      `<div id="firebase-usage-panel-${index}" class="usage-panel" data-usage-panel hidden><p class="usage-state" data-usage-state role="status" aria-live="polite">Checking…</p>` +
       '<div data-usage-metrics></div><p class="usage-note" data-usage-time></p>' +
       '<p class="usage-note">Reported activity is delayed and may differ from quota accounting. Spark daily reference limits; resets around midnight Pacific.</p>' +
-      '<a href="https://console.firebase.google.com/project/ucn-property-tag-b7e0a/usage" target="_blank" rel="noopener noreferrer">View Firebase Console</a></details>';
+      '<a href="https://console.firebase.google.com/project/ucn-property-tag-b7e0a/usage" target="_blank" rel="noopener noreferrer">View Firebase Console</a></div>';
+    const button = mount.querySelector('[data-usage-toggle]');
+    const panel = mount.querySelector('[data-usage-panel]');
+    button.addEventListener('click', () => {
+      panel.hidden = !panel.hidden;
+      button.setAttribute('aria-expanded', String(!panel.hidden));
+      button.textContent = panel.hidden ? 'View Firebase usage' : 'Hide Firebase usage';
+      if (!panel.hidden) refreshUsage();
+    });
   }
 
   function errorMessage(error) {
@@ -91,7 +100,7 @@
   }
 
   async function refreshUsage() {
-    if (loading || document.hidden || !mounts.length) return;
+    if (loading || document.hidden || !mounts.some(mount => !mount.querySelector('[data-usage-panel]').hidden)) return;
     loading = true;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
@@ -112,5 +121,4 @@
   });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshUsage(); });
   setInterval(refreshUsage, 300000);
-  refreshUsage();
 })();

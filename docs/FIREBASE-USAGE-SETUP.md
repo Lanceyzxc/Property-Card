@@ -1,7 +1,9 @@
 # Connect the Firebase usage panel
 
 The Vercel site includes a read-only `/api/usage` endpoint and a usage panel on
-Property Cards and Inventory Tags. Until credentials are configured, the panel
+Property Cards and Inventory Tags. Click **View Firebase usage** in the sidebar
+to show the panel; it starts collapsed and requests usage only while open.
+Until credentials are configured, the panel
 shows **Not connected**. Existing Firestore saves do not depend on this endpoint.
 Save failures and pending changes are shown separately from usage.
 Pending and rejected inventory field edits are retained in memory across live

@@ -7,7 +7,7 @@ function usage(status = 'available', count = 40000) {
   return { status, periodStart: '2026-10-21T07:00:00.000Z', fetchedAt: '2026-10-21T09:00:00.000Z', sampledAt: '2026-10-21T08:56:00.000Z',
     metrics: { reads: { used: count, limit: 50000 }, writes: { used: 12, limit: 20000 }, deletes: { used: null, limit: 20000 } } };
 }
-async function load(t, data = usage(), fetchImpl, html = '<aside><section data-system-status></section></aside>') {
+async function load(t, data = usage(), fetchImpl, html = '<aside><section data-system-status></section></aside>', openUsage = true) {
   const dom = new JSDOM(html, {
     url:'https://example.com/index.html', runScripts:'outside-only', pretendToBeVisual:true
   });
@@ -16,9 +16,35 @@ async function load(t, data = usage(), fetchImpl, html = '<aside><section data-s
   dom.window.Date.now = () => Date.parse('2026-10-21T09:00:10Z');
   dom.window.fetch = fetchImpl || (async () => ({ status:200, json:async () => data }));
   dom.window.eval(fs.readFileSync('public/assets/js/system-status.js', 'utf8'));
+  if (openUsage) dom.window.document.querySelector('[data-usage-toggle]')?.click();
   await new Promise(resolve => setImmediate(resolve));
   return dom.window;
 }
+
+test('usage is hidden behind a button and fetched only after the user opens it', async t => {
+  let requests = 0;
+  const win = await load(t, undefined, async () => {
+    requests++; return {status:200, json:async () => usage()};
+  }, undefined, false);
+  const button = win.document.querySelector('button[data-usage-toggle]');
+  assert.ok(button, 'usage needs a real button');
+  const panel = win.document.getElementById(button.getAttribute('aria-controls'));
+  assert.ok(panel.hidden);
+  assert.equal(button.getAttribute('aria-expanded'), 'false');
+  assert.equal(requests, 0);
+  button.click(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(panel.hidden, false);
+  assert.equal(button.getAttribute('aria-expanded'), 'true');
+  assert.equal(requests, 1);
+  assert.match(panel.textContent, /40,000/);
+  button.click();
+  assert.ok(panel.hidden);
+  assert.equal(button.getAttribute('aria-expanded'), 'false');
+  const token = win.SystemStatus.beginSave('test');
+  win.SystemStatus.saveFailed(token, {code:'unavailable'});
+  assert.match(win.document.querySelector('[data-save-status]').textContent, /not saved/i);
+  assert.equal(win.document.querySelector('[data-save-status]').hidden, false);
+});
 
 test('renders reported usage, unknown counts and the 80 percent warning', async t => {
   const win = await load(t);

@@ -3,9 +3,12 @@
 .system-status .save-status[data-state="error"] { color: #9a1818; font-weight: 700; }
 .system-status .save-status[data-state="pending"] { color: #765000; }
 .system-status .save-status[data-state="saved"] { color: #245b27; }
-.system-status summary { cursor: pointer; font-weight: 700; }
-.system-status summary:focus-visible, .system-status a:focus-visible { outline: 2px solid #004aad; outline-offset: 4px; }
-.system-status .usage-state { display: block; margin: 3px 0 9px 14px; color: #555; font-size: 11px; font-weight: 400; }
+.system-status .usage-toggle { display: block; width: 100%; box-sizing: border-box; padding: 11px 14px; border: 1px solid #7b181e; border-radius: 8px; background: #7b181e; color: #fff; font: inherit; font-weight: 700; text-align: center; cursor: pointer; }
+.system-status .usage-toggle:hover { background: #611218; }
+.system-status .usage-toggle:focus-visible, .system-status a:focus-visible { outline: 2px solid #004aad; outline-offset: 4px; }
+.system-status .usage-panel[hidden] { display: none !important; }
+.system-status .usage-panel { padding-top: 10px; }
+.system-status .usage-state { display: block; margin: 3px 0 9px; color: #555; font-size: 11px; font-weight: 400; }
 .system-status .usage-state[data-state="warning"] { color: #765000; }
 .system-status .usage-metric { margin: 10px 0; }
 .system-status .usage-metric p { margin: 0 0 3px; }
