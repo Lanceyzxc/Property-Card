@@ -1,27 +1,56 @@
 (function () {
   'use strict';
   const mounts = [...document.querySelectorAll('[data-system-status]')];
+  const panels = [];
   const operations = new Map();
   let revision = 0, hasSaved = false, lastUsage = null, loading = false;
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' });
   const currentDay = data => data?.periodStart && day.format(new Date(data.periodStart)) === day.format(new Date(Date.now()));
 
   for (const [index, mount] of mounts.entries()) {
-    mount.classList.add('system-status');
-    mount.innerHTML = '<p class="save-status" data-save-status role="status" aria-live="polite">Changes save automatically.</p>' +
-      `<button class="usage-toggle" data-usage-toggle type="button" aria-expanded="false" aria-controls="firebase-usage-panel-${index}">View Firebase usage</button>` +
-      `<div id="firebase-usage-panel-${index}" class="usage-panel" data-usage-panel hidden><p class="usage-state" data-usage-state role="status" aria-live="polite">Checking…</p>` +
-      '<div data-usage-metrics></div><p class="usage-note" data-usage-time></p>' +
-      '<p class="usage-note">Reported activity is delayed and may differ from quota accounting. Spark daily reference limits; resets around midnight Pacific.</p>' +
-      '<a href="https://console.firebase.google.com/project/ucn-property-tag-b7e0a/usage" target="_blank" rel="noopener noreferrer">View Firebase Console</a></div>';
+    mount.classList.add('system-status', 'control-group');
+    mount.innerHTML = '<p class="system-status-label">System status</p>' +
+      '<p class="save-status" data-save-status role="status" aria-live="polite">Changes save automatically.</p>' +
+      `<button class="neu-btn usage-toggle" data-usage-toggle type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="firebase-usage-panel-${index}">` +
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19h16M7 15v-4m5 4V5m5 10V8" stroke-linecap="round"/></svg>System usage</button>';
     const button = mount.querySelector('[data-usage-toggle]');
-    const panel = mount.querySelector('[data-usage-panel]');
+    const panel = document.createElement('div');
+    panel.id = `firebase-usage-panel-${index}`;
+    panel.className = 'usage-panel usage-dialog-overlay';
+    panel.setAttribute('data-usage-panel', ''); panel.hidden = true;
+    panel.innerHTML = `<section class="usage-dialog" role="dialog" aria-modal="true" aria-labelledby="usage-title-${index}" aria-describedby="usage-description-${index}">` +
+      '<header class="usage-dialog-header"><div><p class="usage-eyebrow">UCN ProCard</p>' +
+      `<h2 id="usage-title-${index}">System usage</h2><p id="usage-description-${index}">Shared across all departments. No Google sign-in needed.</p></div>` +
+      '<button class="neu-btn usage-close" data-usage-close type="button" aria-label="Close system usage">&times;</button></header>' +
+      '<div class="usage-summary"><span class="usage-plan">Spark · Daily activity</span><span class="usage-state" data-usage-state role="status" aria-live="polite">Checking…</span></div>' +
+      '<div class="usage-metrics" data-usage-metrics></div><p class="usage-time" data-usage-time></p>' +
+      '<p class="usage-note">Usage reports may take a few minutes to update. Daily reference limits reset around midnight Pacific Time. Check the save status to confirm each change was stored.</p>' +
+      '<footer class="usage-dialog-footer"><span>Same project-wide usage for every user</span><button class="neu-btn usage-refresh" data-usage-refresh type="button">Refresh usage</button></footer></section>';
+    document.body.append(panel); panels.push(panel);
+    const close = () => {
+      panel.hidden = true; button.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('system-usage-open'); button.focus();
+    };
+    panel.querySelector('[data-usage-close]').addEventListener('click', close);
+    panel.querySelector('[data-usage-refresh]').addEventListener('click', refreshUsage);
+    panel.addEventListener('click', event => { if (event.target === panel) close(); });
     button.addEventListener('click', () => {
-      panel.hidden = !panel.hidden;
-      button.setAttribute('aria-expanded', String(!panel.hidden));
-      button.textContent = panel.hidden ? 'View Firebase usage' : 'Hide Firebase usage';
-      if (!panel.hidden) refreshUsage();
+      if (!panel.hidden) { close(); return; }
+      panel.hidden = false; button.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('system-usage-open');
+      panel.querySelector('[data-usage-close]').focus(); refreshUsage();
     });
+    document.addEventListener('keydown', event => {
+      if (panel.hidden) return;
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); }
+      if (event.key === 'Tab') {
+        const items = [...panel.querySelectorAll('button:not([disabled])')];
+        const first = items[0], last = items[items.length - 1];
+        if (!items.includes(document.activeElement) || (event.shiftKey && document.activeElement === first)) {
+          event.preventDefault(); (event.shiftKey ? last : first).focus();
+        } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
+    }, true);
   }
 
   function errorMessage(error) {
@@ -64,10 +93,10 @@
 
   function renderUsage(data) {
     const usable = ['available', 'stale'].includes(data?.status) && currentDay(data);
-    for (const mount of mounts) {
-      const state = mount.querySelector('[data-usage-state]');
-      const metrics = mount.querySelector('[data-usage-metrics]');
-      const time = mount.querySelector('[data-usage-time]');
+    for (const panel of panels) {
+      const state = panel.querySelector('[data-usage-state]');
+      const metrics = panel.querySelector('[data-usage-metrics]');
+      const time = panel.querySelector('[data-usage-time]');
       metrics.replaceChildren(); time.textContent = '';
       state.textContent = data?.status === 'unconfigured' ? 'Not connected' : !usable ? 'Unavailable' : data.status === 'stale' ? 'Stale data' : 'Reported usage';
       state.dataset.state = usable && data.status !== 'stale' ? 'available' : 'warning';
@@ -81,7 +110,8 @@
         const percent = known ? metric.used / metric.limit * 100 : null;
         const row = document.createElement('div'); row.className = 'usage-metric'; row.dataset.metric = key;
         const text = document.createElement('p');
-        text.textContent = known ? `${label}: ${metric.used.toLocaleString('en-US')} / ${metric.limit.toLocaleString('en-US')} (${Number(percent.toFixed(1))}%)` : `${label}: Unknown`;
+        const heading = document.createElement('h3'); heading.textContent = label; row.append(heading);
+        text.textContent = known ? `${metric.used.toLocaleString('en-US')} / ${metric.limit.toLocaleString('en-US')} (${Number(percent.toFixed(1))}%)` : 'Unknown';
         row.append(text);
         if (known) {
           const bar = document.createElement('progress'); bar.max = 100; bar.value = Math.min(100, percent);
@@ -100,12 +130,13 @@
   }
 
   async function refreshUsage() {
-    if (loading || document.hidden || !mounts.some(mount => !mount.querySelector('[data-usage-panel]').hidden)) return;
+    if (loading || document.hidden || !panels.some(panel => !panel.hidden)) return;
     loading = true;
+    panels.forEach(panel => { panel.querySelector('[data-usage-refresh]').disabled = true; });
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
     try {
-      const response = await fetch('/api/usage', { signal: controller.signal, cache: 'no-store' });
+      const response = await fetch('/api/usage', { signal: controller.signal, cache: 'no-store', credentials: 'omit' });
       const data = await response.json();
       if (!['available', 'stale', 'unconfigured', 'unavailable'].includes(data.status)) throw Error('Invalid usage response');
       if (['available', 'stale'].includes(data.status) && currentDay(data)) lastUsage = data;
@@ -113,7 +144,10 @@
       renderUsage(data);
     } catch {
       renderUsage(lastUsage && currentDay(lastUsage) ? { ...lastUsage, status: 'stale' } : { status: 'unavailable' });
-    } finally { clearTimeout(timer); loading = false; }
+    } finally {
+      clearTimeout(timer); loading = false;
+      panels.forEach(panel => { panel.querySelector('[data-usage-refresh]').disabled = false; });
+    }
   }
 
   window.addEventListener('beforeunload', event => {

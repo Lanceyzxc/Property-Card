@@ -37,13 +37,68 @@ test('usage is hidden behind a button and fetched only after the user opens it',
   assert.equal(button.getAttribute('aria-expanded'), 'true');
   assert.equal(requests, 1);
   assert.match(panel.textContent, /40,000/);
-  button.click();
+  panel.querySelector('[data-usage-close]').click();
   assert.ok(panel.hidden);
   assert.equal(button.getAttribute('aria-expanded'), 'false');
   const token = win.SystemStatus.beginSave('test');
   win.SystemStatus.saveFailed(token, {code:'unavailable'});
   assert.match(win.document.querySelector('[data-save-status]').textContent, /not saved/i);
   assert.equal(win.document.querySelector('[data-save-status]').hidden, false);
+});
+
+test('shared in-app dialog needs no Google login or external Console redirect', async t => {
+  let options;
+  const win = await load(t, undefined, async (url, config) => {
+    assert.equal(url, '/api/usage'); options = config;
+    return {status:200,json:async () => usage()};
+  });
+  const panel = win.document.querySelector('[data-usage-panel]');
+  const dialog = panel.querySelector('[role="dialog"]');
+  assert.ok(dialog);
+  assert.equal(dialog.getAttribute('aria-modal'), 'true');
+  assert.match(panel.textContent, /all departments/i);
+  assert.equal(panel.querySelector('a[href*="firebase.google.com"]'), null);
+  assert.equal(win.document.querySelector('a[href*="accounts.google.com"]'), null);
+  assert.equal(options.credentials, 'omit');
+  assert.ok(win.document.querySelector('[data-usage-toggle]').classList.contains('neu-btn'));
+});
+
+test('dialog closes with Escape or backdrop click and restores focus', async t => {
+  const win = await load(t);
+  const button = win.document.querySelector('[data-usage-toggle]');
+  const panel = win.document.querySelector('[data-usage-panel]');
+  assert.equal(win.document.activeElement, panel.querySelector('[data-usage-close]'));
+  win.document.dispatchEvent(new win.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+  assert.ok(panel.hidden); assert.equal(win.document.activeElement, button);
+  button.click(); await new Promise(resolve => setImmediate(resolve));
+  panel.click(); assert.ok(panel.hidden);
+});
+
+test('dialog keeps keyboard focus inside and can refresh without leaving the app', async t => {
+  let requests = 0;
+  const win = await load(t, undefined, async () => {requests++;return {status:200,json:async () => usage()};});
+  const panel = win.document.querySelector('[data-usage-panel]');
+  const close = panel.querySelector('[data-usage-close]');
+  const refresh = panel.querySelector('[data-usage-refresh]');
+  refresh.focus();
+  win.document.dispatchEvent(new win.KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));
+  assert.equal(win.document.activeElement, close);
+  refresh.click(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(requests, 2); assert.equal(panel.hidden, false);
+});
+
+test('Tab stays in the dialog when the focused Refresh button becomes disabled', async t => {
+  let requests = 0;
+  const win = await load(t, undefined, async () => {
+    if (++requests === 1) return {status:200,json:async () => usage()};
+    return new Promise(() => {});
+  });
+  const panel = win.document.querySelector('[data-usage-panel]');
+  const refresh = panel.querySelector('[data-usage-refresh]');
+  refresh.focus(); refresh.click();
+  assert.equal(refresh.disabled, true);
+  win.document.dispatchEvent(new win.KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));
+  assert.equal(win.document.activeElement, panel.querySelector('[data-usage-close]'));
 });
 
 test('renders reported usage, unknown counts and the 80 percent warning', async t => {
@@ -53,7 +108,7 @@ test('renders reported usage, unknown counts and the 80 percent warning', async 
   assert.match(win.document.body.textContent, /Unknown/);
   assert.match(win.document.body.textContent, /Near reference limit/);
   assert.match(win.document.body.textContent, /Last checked/);
-  assert.match(win.document.body.textContent, /delayed/i);
+  assert.match(win.document.body.textContent, /few minutes|delayed/i);
   assert.equal(win.document.querySelector('[data-metric="reads"] progress').value, 80);
 });
 

@@ -1,11 +1,18 @@
 # Connect the Firebase usage panel
 
 The Vercel site includes a read-only `/api/usage` endpoint and a usage panel on
-Property Cards and Inventory Tags. Click **View Firebase usage** in the sidebar
-to show the panel; it starts collapsed and requests usage only while open.
+Property Cards and Inventory Tags. Click **System usage** in the sidebar
+to open the app's own dialog. It uses the same gray/maroon controls as the rest
+of the system, supports Close/Escape/backdrop dismissal, and has its own Refresh
+button. It requests usage only while open.
+All departments read the same server-provided aggregate metrics. App users do
+not need a Google account, Firebase Console access, or their own Monitoring
+permissions. The UI makes no external Console redirect and omits browser
+credentials when requesting `/api/usage`.
 Until credentials are configured, the panel
 shows **Not connected**. Existing Firestore saves do not depend on this endpoint.
-Save failures and pending changes are shown separately from usage.
+Save failures and pending changes remain visible in the sidebar even when the
+usage dialog is closed.
 Pending and rejected inventory field edits are retained in memory across live
 snapshot refreshes; only confirmation of the matching write clears that draft.
 Leaving or reloading the page can still lose those unsaved edits.
@@ -76,7 +83,8 @@ Keep credentials out of browser JavaScript, source control, screenshots, and
 chat. Do not put a credential file anywhere under `public/`, even if Git ignores
 it: static hosting would still expose it. Remove/revoke keys that are leaked.
 
-Deploy the feature branch after review. Redeploy after changing environment
+Changes are committed and deployed through `main`, per the owner's preference.
+Redeploy after changing environment
 variables so the function receives them. `vercel.json` selects the static
 `public` output and root `api/usage.js` Node function. The repository must be the
 Vercel Root Directory, not `public`, and the Node version is 22.x. Existing
@@ -89,7 +97,8 @@ API. The usage panel is intended for the Vercel deployment.
 2. Confirm `projectId`, `databaseId`, and `periodStart` match the intended
    database/day. A working response uses `status: "available"`; metric `used`
    values are numeric where Google returned samples.
-3. Open both the normal home page and `/inventory.html`. Check the panel and
+3. Open both the normal home page and `/inventory.html`. Open **System usage**
+   using a browser with no Google account signed in. Check the panel and
    existing images, CSS, navigation, and print layout.
 4. Compare with Firebase Console for the same database and Pacific day. Allow
    for metric reporting delay and five-minute function-instance caching.
@@ -97,6 +106,14 @@ API. The usage panel is intended for the Vercel deployment.
 
 No live-success claim should be made until an authenticated response is observed.
 The local test suite uses fixtures and never sends test writes to Firestore.
+
+The production endpoint was checked on 2026-10-21 and returned `unconfigured`.
+A read-only check using the locally signed-in Firebase CLI account returned
+Google Monitoring HTTP 403: `Permission denied (or the resource may not exist).`
+That account cannot currently supply the monitoring data. No Google permission
+was granted, no service-account key was created, and no Vercel secret was set.
+The owner must configure the dedicated read-only server credentials above;
+removing the Console link alone does not enable real metrics.
 
 ## Local development
 
