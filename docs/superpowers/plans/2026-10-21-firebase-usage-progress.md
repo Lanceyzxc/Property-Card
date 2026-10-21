@@ -24,3 +24,9 @@ Task 3: in progress.
 Ruling: Use jsdom as a dev-only DOM test environment rather than a bespoke DOM
 fixture; real DOM rendering tests catch more integration errors with less test
 scaffolding. Cost is a dev dependency, not shipped client code.
+
+Task 3: complete. UI tests failed first for missing component, then actual
+main/inventory integration tests failed for missing pending state. Both are
+GREEN after implementation; whole suite 20/20, syntax checks and diff check pass.
+Task 4: in progress. Official Vercel configuration docs checked: root api/
+functions coexist with public/ output; framework null disables autodetection.

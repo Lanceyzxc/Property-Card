@@ -483,11 +483,21 @@ function printSelectedInventory() {
 }
 
 function setupInventoryEditing(scope = document) {
+  const pendingTokens = new WeakMap();
+  const beginEdit = element => {
+    const wrap = element.closest('.inventory-tag-wrap');
+    const record = inventoryRecords[Number(wrap?.dataset.recordIndex)];
+    if (!record || !element.dataset.field) return;
+    const token = window.SystemStatus?.beginSave(`inventory:${record.cardId}:${element.dataset.field}`);
+    pendingTokens.set(element, token);
+    return token;
+  };
   const elements = Array.isArray(scope)
     ? scope.flatMap(item => [...item.querySelectorAll('[contenteditable="true"][data-field]')])
     : [...(scope instanceof Element ? scope : document).querySelectorAll('[contenteditable="true"][data-field]')];
   elements.forEach(element => {
     element.addEventListener('input', () => {
+      beginEdit(element);
       if (element.closest('.tag-dates')) fitPersonAccountableNames();
       if (element.closest('.tag-signatures')) fitSignatureNames();
     });
@@ -498,14 +508,20 @@ function setupInventoryEditing(scope = document) {
       if (!record || !fieldName) return;
 
       const value = element.textContent.trim();
+      const token = pendingTokens.get(element) || beginEdit(element);
+      pendingTokens.delete(element);
       if (fieldName === 'unitQuantity') {
         record.unitQuantity = value;
       } else {
         record[fieldName] = value;
       }
 
-      firebase.firestore().collection('propertyTags').doc(record.cardId).update({ [fieldName]: value })
-        .catch(error => console.error('Inventory tag save error:', error));
+      Promise.resolve().then(() => firebase.firestore().collection('propertyTags').doc(record.cardId).update({ [fieldName]: value }))
+        .then(() => window.SystemStatus?.saveSucceeded(token))
+        .catch(error => {
+          window.SystemStatus?.saveFailed(token, error);
+          console.error('Inventory tag save error:', error);
+        });
     });
   });
 }
@@ -579,7 +595,13 @@ async function startInventory() {
     populateDepartments();
     renderTags();
 
-    ensureInventoryTags(inventoryRecords, firestore).catch(error => console.error('Inventory tag assignment error:', error));
+    const assignmentToken = window.SystemStatus?.beginSave('inventory-number-assignment');
+    ensureInventoryTags(inventoryRecords, firestore)
+      .then(() => window.SystemStatus?.saveSucceeded(assignmentToken))
+      .catch(error => {
+        window.SystemStatus?.saveFailed(assignmentToken, error);
+        console.error('Inventory tag assignment error:', error);
+      });
   };
 
   let unsubscribe = null;

@@ -1,0 +1,18 @@
+.system-status { flex-shrink: 0; min-width: 0; padding: 14px; border: 1px solid #c5c5c5; border-radius: 12px; background: #f8f8f6; color: #303030; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.system-status .save-status { margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid #d9d9d9; }
+.system-status .save-status[data-state="error"] { color: #9a1818; font-weight: 700; }
+.system-status .save-status[data-state="pending"] { color: #765000; }
+.system-status .save-status[data-state="saved"] { color: #245b27; }
+.system-status summary { cursor: pointer; font-weight: 700; }
+.system-status summary:focus-visible, .system-status a:focus-visible { outline: 2px solid #004aad; outline-offset: 4px; }
+.system-status .usage-state { display: block; margin: 3px 0 9px 14px; color: #555; font-size: 11px; font-weight: 400; }
+.system-status .usage-state[data-state="warning"] { color: #765000; }
+.system-status .usage-metric { margin: 10px 0; }
+.system-status .usage-metric p { margin: 0 0 3px; }
+.system-status progress { display: block; width: 100%; height: 7px; accent-color: #7b181e; }
+.system-status .usage-metric[data-level="warning"] { color: #765000; }
+.system-status .usage-metric[data-level="limit"] { color: #9a1818; }
+.system-status small { display: block; margin-top: 3px; }
+.system-status .usage-note { color: #555; font-size: 11px; margin: 10px 0; }
+.system-status a { color: #004aad; }
+@media print { .system-status { display: none !important; } }
