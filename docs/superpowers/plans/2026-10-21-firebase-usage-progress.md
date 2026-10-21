@@ -16,4 +16,11 @@ Verified Pacific boundaries, pagination, missing/zero data, cache, failure,
 secret redaction, and token/fetch timeout. npm dependency installed after
 sandbox network approval. Added a one-minute failure cooldown to limit retries.
 
-Task 2: in progress.
+Task 2: complete. Watched missing API module RED, then service/API 12/12 GREEN,
+including real local HTTP requests for pages, CSS, GET usage and POST rejection.
+Malformed credentials and thrown upstream errors are sanitized.
+
+Task 3: in progress.
+Ruling: Use jsdom as a dev-only DOM test environment rather than a bespoke DOM
+fixture; real DOM rendering tests catch more integration errors with less test
+scaffolding. Cost is a dev dependency, not shipped client code.
