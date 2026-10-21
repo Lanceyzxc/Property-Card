@@ -39,4 +39,26 @@ no live authenticated request or production deployment has been performed.
 Browser layout and print inspection remain unavailable because no browser
 surface is connected. Tests run on installed Node 24.13.1; Vercel targets 22.x.
 
-Final review: pending independent whole-branch review.
+Final review: independent read-only review of 66dc4b1..6210ac5 identified three
+Important findings, no Critical or Minor findings. Accepted all three.
+Final: fixed incomplete Monitoring response handling — first/later partial-page
+and stale-refresh regression tests RED→GREEN, whole suite 24/24.
+Final: fixed project scoping — explicit project-selector query assertion
+RED→GREEN, whole suite 24/24.
+Final: fixed inventory draft rollback loss — actual snapshot-driven DOM tests
+for rejected drafts and old-success/new-draft ordering RED→GREEN, suite 24/24.
+Final: Ruling: live Vercel routing and authenticated Google comparison remain
+unverified because no account/browser connection exists — document as pending,
+not success — cost if wrong is deployment/configuration adjustment on activation.
+Final: Ruling: actual desktop/mobile/print appearance remains unverified because
+no browser is connected; DOM tests cover behavior and CSS excludes printing —
+cost if wrong is a layout correction after visual inspection.
+Final: Ruling: billing/quota equivalence is not guaranteed; keep the documented
+reported-activity labels and require live comparison — cost is approximate
+visibility rather than an authoritative remaining-quota counter.
+
+Final runtime verification: `npm exec --yes --package=node@22 -- node --test`
+passed 24/24 with zero failures. The review's Node 22 execution gap is resolved.
+No deferred minor findings. All three Important findings have RED→GREEN tests.
+Code is ready on feat/firebase-usage; cloud activation and actual browser layout
+inspection remain pending as described above. No push, merge, or deploy done.

@@ -7,8 +7,8 @@ function usage(status = 'available', count = 40000) {
   return { status, periodStart: '2026-10-21T07:00:00.000Z', fetchedAt: '2026-10-21T09:00:00.000Z', sampledAt: '2026-10-21T08:56:00.000Z',
     metrics: { reads: { used: count, limit: 50000 }, writes: { used: 12, limit: 20000 }, deletes: { used: null, limit: 20000 } } };
 }
-async function load(t, data = usage(), fetchImpl) {
-  const dom = new JSDOM('<aside><section data-system-status></section></aside>', {
+async function load(t, data = usage(), fetchImpl, html = '<aside><section data-system-status></section></aside>') {
+  const dom = new JSDOM(html, {
     url:'https://example.com/index.html', runScripts:'outside-only', pretendToBeVisual:true
   });
   t.after(() => dom.window.close());
@@ -121,4 +121,52 @@ test('Inventory Tags reports pending input then a confirmed field save', async t
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(writes.length, 1); assert.equal(writes[0].data.article, 'New article');
   assert.match(win.document.querySelector('[data-save-status]').textContent, /^Saved/);
+});
+
+async function liveInventory(t, update) {
+  const win = await load(t, undefined, undefined, fs.readFileSync('public/inventory.html','utf8'));
+  let notify;
+  const record = {dept:'MAIN', propertyNo:'old', inventoryTag:'26-001', itemDescription:'Test item'};
+  const snapshot = {docs:[{id:'card-test',data:() => ({...record})}]};
+  win.sessionStorage.setItem('propertyCardDepartment','MAIN');
+  win.console.error = () => {};
+  const firestore = {collection: () => ({doc: () => ({update}), onSnapshot: callback => {
+    notify = callback; callback(snapshot); return () => {};
+  }}), runTransaction: async callback => callback({
+    get:async () => ({exists:true,data:() => ({lastNumber:1})}), set() {}
+  })};
+  win.firebase = {initializeApp() {}, firestore:() => firestore};
+  win.eval(fs.readFileSync('public/assets/js/inventory.js','utf8'));
+  await win.startInventory();
+  await new Promise(resolve => setImmediate(resolve));
+  return {win, snapshot: async () => {notify(snapshot); await new Promise(resolve => setImmediate(resolve));}};
+}
+
+test('failed inventory draft survives rollback and unrelated snapshots until confirmed retry', async t => {
+  let rejectWrite = true;
+  const {win, snapshot} = await liveInventory(t, async () => { if (rejectWrite) throw {code:'resource-exhausted'}; });
+  const field = () => win.document.querySelector('[data-field="propertyNo"]');
+  field().textContent = 'unsaved'; field().dispatchEvent(new win.Event('input'));
+  field().dispatchEvent(new win.Event('blur'));
+  await new Promise(resolve => setImmediate(resolve));
+  await snapshot(); await snapshot();
+  assert.equal(field().textContent, 'unsaved');
+  assert.match(win.document.querySelector('[data-save-status]').textContent, /not saved/i);
+  rejectWrite = false; field().dispatchEvent(new win.Event('blur'));
+  await new Promise(resolve => setImmediate(resolve));
+  await snapshot();
+  assert.equal(field().textContent, 'old'); // Confirmed revision no longer overlays incoming server data.
+});
+
+test('older successful inventory write cannot discard a newer pending field draft', async t => {
+  const resolvers = [];
+  const {win, snapshot} = await liveInventory(t, () => new Promise(resolve => resolvers.push(resolve)));
+  const field = () => win.document.querySelector('[data-field="propertyNo"]');
+  field().textContent = 'first'; field().dispatchEvent(new win.Event('input')); field().dispatchEvent(new win.Event('blur'));
+  await new Promise(resolve => setImmediate(resolve));
+  field().textContent = 'second'; field().dispatchEvent(new win.Event('input'));
+  resolvers[0](); await new Promise(resolve => setImmediate(resolve));
+  await snapshot();
+  assert.equal(field().textContent, 'second');
+  assert.match(win.document.querySelector('[data-save-status]').textContent, /awaiting confirmation/i);
 });

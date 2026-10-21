@@ -42,6 +42,7 @@ test('sums paginated operation labels and scopes each query to the configured da
     assert.match(url.searchParams.get('filter'), /resource.type = "firestore.googleapis.com\/Database"/);
     assert.match(url.searchParams.get('filter'), /resource.labels.database_id = "\(default\)"/);
     assert.match(url.searchParams.get('filter'), /_ops_count/);
+    assert.match(url.searchParams.get('filter'), /project = "ucn-property-tag-b7e0a"/);
     assert.equal(url.searchParams.get('interval.startTime'), '2026-10-21T07:00:00.000Z');
   }
 });
@@ -101,4 +102,30 @@ test('refresh timeout includes token acquisition and stalled fetch', async () =>
     const result = await service.getUsage();
     assert.equal(result.status, 'unavailable');
   }
+});
+
+test('partial monitoring pages never become trusted totals, including a later page', async () => {
+  for (const field of ['executionErrors', 'unreachable']) {
+    for (const partialPage of [1, 2]) {
+      const { service } = setup(async url => {
+        const page = new URL(url).searchParams.has('pageToken') ? 2 : 1;
+        return { ok:true, json:async () => ({timeSeries:[{points:[sample(7)]}],
+          ...(page === partialPage ? {[field]: field === 'unreachable' ? ['region'] : [{code:13,message:'SECRET'}]} : {}),
+          ...(page === 1 ? {nextPageToken:'next'} : {})}) };
+      });
+      const data = await service.getUsage();
+      assert.equal(data.status, 'unavailable'); assert.equal(data.metrics.reads.used, null);
+      assert.doesNotMatch(JSON.stringify(data), /SECRET/);
+    }
+  }
+});
+
+test('partial monitoring refresh preserves previous same-day samples as stale', async () => {
+  let partial = false;
+  const {service, setTime} = setup(async () => ({ok:true, json:async () => ({
+    timeSeries:[{points:[sample(17)]}], ...(partial ? {executionErrors:[{code:13}]} : {})
+  })}));
+  await service.getUsage(); partial = true; setTime('2026-10-21T09:06:00Z');
+  const result = await service.getUsage();
+  assert.equal(result.status, 'stale'); assert.equal(result.metrics.reads.used, 17);
 });
