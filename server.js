@@ -1,7 +1,6 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const usageHandler = require('./api/usage');
 
 // Bind to all interfaces so the dev server is reachable from other devices on the LAN
 const hostname = '0.0.0.0';
@@ -23,10 +22,6 @@ const mimeTypes = {
 function createServer() {
   return http.createServer((req, res) => {
     const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    if (parsedUrl.pathname === '/api/usage') {
-      usageHandler(req, res);
-      return;
-    }
     let requestPath = parsedUrl.pathname === '/' ? '/index.html' : parsedUrl.pathname;
     requestPath = decodeURIComponent(requestPath);
 
@@ -79,5 +74,4 @@ function startServer(port, attempt = 1) {
   });
 }
 
-if (require.main === module) startServer(defaultPort);
-module.exports = { createServer };
+startServer(defaultPort);

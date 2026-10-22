@@ -9,9 +9,6 @@ const firebaseConfig = {
 };
 
 let inventoryRecords = [];
-// Keep edits independent of Firestore's optimistic snapshots and rollbacks.
-// These drafts are in memory only and are cleared by the matching confirmed write.
-const inventoryDrafts = new Map();
 let qrRenderGeneration = 0;
 let inventoryQrObserver = null;
 let inventoryRenderGeneration = 0;
@@ -486,26 +483,11 @@ function printSelectedInventory() {
 }
 
 function setupInventoryEditing(scope = document) {
-  const pendingTokens = new WeakMap();
-  const beginEdit = element => {
-    const wrap = element.closest('.inventory-tag-wrap');
-    const record = inventoryRecords[Number(wrap?.dataset.recordIndex)];
-    if (!record || !element.dataset.field) return;
-    const fieldName = element.dataset.field;
-    const key = `inventory:${record.cardId}:${fieldName}`;
-    const draft = { key, cardId: record.cardId, fieldName, value: element.textContent.trim(),
-      token: window.SystemStatus?.beginSave(key) };
-    inventoryDrafts.set(key, draft);
-    record[fieldName] = draft.value;
-    pendingTokens.set(element, draft);
-    return draft;
-  };
   const elements = Array.isArray(scope)
     ? scope.flatMap(item => [...item.querySelectorAll('[contenteditable="true"][data-field]')])
     : [...(scope instanceof Element ? scope : document).querySelectorAll('[contenteditable="true"][data-field]')];
   elements.forEach(element => {
     element.addEventListener('input', () => {
-      beginEdit(element);
       if (element.closest('.tag-dates')) fitPersonAccountableNames();
       if (element.closest('.tag-signatures')) fitSignatureNames();
     });
@@ -516,24 +498,14 @@ function setupInventoryEditing(scope = document) {
       if (!record || !fieldName) return;
 
       const value = element.textContent.trim();
-      const draft = pendingTokens.get(element) || beginEdit(element);
-      pendingTokens.delete(element);
-      draft.value = value;
       if (fieldName === 'unitQuantity') {
         record.unitQuantity = value;
       } else {
         record[fieldName] = value;
       }
 
-      Promise.resolve().then(() => firebase.firestore().collection('propertyTags').doc(record.cardId).update({ [fieldName]: value }))
-        .then(() => {
-          if (inventoryDrafts.get(draft.key) === draft) inventoryDrafts.delete(draft.key);
-          window.SystemStatus?.saveSucceeded(draft.token);
-        })
-        .catch(error => {
-          window.SystemStatus?.saveFailed(draft.token, error);
-          console.error('Inventory tag save error:', error);
-        });
+      firebase.firestore().collection('propertyTags').doc(record.cardId).update({ [fieldName]: value })
+        .catch(error => console.error('Inventory tag save error:', error));
     });
   });
 }
@@ -602,23 +574,12 @@ async function startInventory() {
       ...doc.data(),
       dept: normalizeDepartmentName(doc.data().dept)
     }));
-    for (const record of inventoryRecords) {
-      for (const draft of inventoryDrafts.values()) {
-        if (draft.cardId === record.cardId) record[draft.fieldName] = draft.value;
-      }
-    }
     const select = document.getElementById('inventory-department');
     select.innerHTML = '<option value="ALL">All Departments</option>';
     populateDepartments();
     renderTags();
 
-    const assignmentToken = window.SystemStatus?.beginSave('inventory-number-assignment');
-    ensureInventoryTags(inventoryRecords, firestore)
-      .then(() => window.SystemStatus?.saveSucceeded(assignmentToken))
-      .catch(error => {
-        window.SystemStatus?.saveFailed(assignmentToken, error);
-        console.error('Inventory tag assignment error:', error);
-      });
+    ensureInventoryTags(inventoryRecords, firestore).catch(error => console.error('Inventory tag assignment error:', error));
   };
 
   let unsubscribe = null;

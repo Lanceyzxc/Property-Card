@@ -294,13 +294,9 @@ function createCardId() {
   return `card-${department.toLowerCase()}-${uniquePart}`;
 }
 
-function saveCardToFirebase(cardWrapper, saveToken) {
+function saveCardToFirebase(cardWrapper) {
+  if (!firebaseInitialized || !firebaseFirestore) return;
   if (!cardWrapper) return;
-  const token = saveToken || window.SystemStatus?.beginSave(`card:${cardWrapper.dataset.cardId}`);
-  if (!firebaseInitialized || !firebaseFirestore) {
-    window.SystemStatus?.saveFailed(token, { code: 'unavailable' });
-    return;
-  }
 
   const data = getCardData(cardWrapper);
   const hasContent = Object.keys(data).some(key => key !== 'savedAt' && data[key]);
@@ -314,15 +310,13 @@ function saveCardToFirebase(cardWrapper, saveToken) {
     data.qrUrl = '';
   }
   const cardDoc = firebaseFirestore.collection('propertyTags').doc(cardId);
-  Promise.resolve().then(() => cardDoc.set(data))
+  cardDoc.set(data)
     .then(() => {
-      window.SystemStatus?.saveSucceeded(token);
       cardWrapper.dataset.cardId = cardId;
       if (!deferCardQrRendering) renderCardQRCode(cardWrapper);
       updateFirebaseStatus(`Saved card ${cardId}`, "#499632");
     })
     .catch((err) => {
-      window.SystemStatus?.saveFailed(token, err);
       console.error('Firestore save error', err);
       updateFirebaseStatus(`Save failed for card ${cardId}`, "#9a0603");
     });
@@ -332,32 +326,28 @@ function setupFirebaseAutoSave(cardWrapper) {
   if (!cardWrapper) return;
   const inputs = cardWrapper.querySelectorAll('.underline-input');
   const selects = cardWrapper.querySelectorAll('.dept-select');
-  const saveOnChange = debounce(token => saveCardToFirebase(cardWrapper, token), 300);
-  const queueSave = () => {
-    const token = window.SystemStatus?.beginSave(`card:${cardWrapper.dataset.cardId}`);
-    saveOnChange(token);
-  };
+  const saveOnChange = debounce(() => saveCardToFirebase(cardWrapper), 300);
 
   inputs.forEach(input => {
     input.addEventListener('input', () => {
       if (input.classList.contains('auto-resize')) {
         cardWrapper.dataset.itemDescriptionRaw = input.value;
       }
-      queueSave();
+      saveOnChange();
       renderCardQRCode(cardWrapper);
     });
     input.addEventListener('change', () => {
       if (input.classList.contains('auto-resize')) {
         cardWrapper.dataset.itemDescriptionRaw = input.value;
       }
-      queueSave();
+      saveOnChange();
       renderCardQRCode(cardWrapper);
     });
   });
 
   selects.forEach(select => {
     select.addEventListener('change', () => {
-      queueSave();
+      saveOnChange();
       renderCardQRCode(cardWrapper);
     });
   });
